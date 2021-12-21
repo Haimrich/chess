@@ -1,0 +1,53 @@
+﻿@page "/"
+
+@using  Client.Logic
+
+
+<section class="@game.ViewSideClass board">
+    @for (int i = 0; i < 8; i++) {
+        <div>
+            @for (int j = 0; j < 8; j++) {
+                <div></div>
+            }
+        </div>
+    }
+
+    @{
+        foreach (Piece p in game.Piecies) {
+            <div class="piece @p.Square.Position @p.Type" @onclick=@(() => game.SelectPiece(p))></div>
+        }
+
+        foreach (Move s in game.PossibleMoves) {
+            if (s.CapturedPiece is not null)
+            {
+                <div class="capture @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
+            } else
+            {
+                <div class="destination @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
+            }
+        }
+
+        foreach (Square s in game.LastMoveSquares) {
+            <div class="lastmove @s.Position"></div>
+        }
+
+        if (game.SelectedPiece is Piece sp)
+        {
+            <div class="selected @sp.Square.Position"></div>
+        }
+
+    }
+</section>
+
+<section class="choose_piece @game.PromotionModalClass">
+    <div class="piece wq" @onclick=@(() => game.ChoosePromotion("queen"))></div>
+    <div class="piece wr" @onclick=@(() => game.ChoosePromotion("rook"))></div>
+    <div class="piece wb" @onclick=@(() => game.ChoosePromotion("bishop"))></div>
+    <div class="piece wn" @onclick=@(() => game.ChoosePromotion("knight"))></div>
+</section>
+
+
+@code {
+    private Game game = new Game();
+
+}
