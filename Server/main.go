@@ -17,6 +17,8 @@ func main() {
 	router.POST("/login", auth.TokenAuthMiddleware(false), h.Login)
 	router.GET("/", auth.TokenAuthMiddleware(false), h.Home)
 	router.GET("/logout", auth.TokenAuthMiddleware(true), h.Logout)
+	router.POST("/signup", h.Signup)
 
+	router.Static("/avatar", "avatar")
 	log.Fatal(router.Run(":8080"))
 }

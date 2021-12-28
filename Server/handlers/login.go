@@ -1,22 +1,22 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"server/auth"
+	"server/db"
+	"server/helpers"
+	"server/models"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type LoginForm struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-//A sample use
-var user = LoginForm{
-	Username: "username",
-	Password: "password",
+	Username string `json:"username" form:"username" binding:"required"`
+	Password string `json:"password" form:"password" binding:"required"`
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -28,16 +28,29 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	var loginData LoginForm
-	if err := c.ShouldBindJSON(&loginData); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
+	if err := c.ShouldBind(&loginData); err != nil {
+		c.JSON(http.StatusBadRequest, "Riempi tutti i campi.")
 		return
 	}
-	//compare the user from the request, with the one we defined:
-	if user.Username != loginData.Username || user.Password != loginData.Password {
-		c.JSON(http.StatusUnauthorized, "Please provide valid login details")
+
+	result := h.DB.Collection(db.UsersCollectionName).FindOne(context.TODO(), bson.D{{Key: "username", Value: loginData.Username}})
+	var user models.User
+
+	if err := result.Decode(&user); err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.String(http.StatusNotFound, "L'utente %s non esiste.", loginData.Username)
+		} else {
+			c.String(http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
-	uid := "UID-sdfjsodifjs"
+
+	if err := helpers.PasswordCompare(loginData.Password, user.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, "Password errata.")
+		return
+	}
+
+	uid := user.ID.Hex()
 
 	accessToken, refreshToken, err := auth.GenerateTokensAndSetCookies(uid, c)
 	if err != nil {
@@ -52,4 +65,8 @@ func (h *Handler) Login(c *gin.Context) {
 			"refresh-token": refreshToken,
 		},
 	})
+}
+
+func (h *Handler) Logout(c *gin.Context) {
+	auth.DeleteTokens(c)
 }

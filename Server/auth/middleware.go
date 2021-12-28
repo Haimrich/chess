@@ -8,69 +8,56 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const logPrefix = "      Auth - "
+
 func TokenAuthMiddleware(authNeeded bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var err error
 
-		accessTokenString, refreshTokenString, err := extractTokens(c)
-		if err != nil {
-			fmt.Println("[AUTH] Cookies not found.")
-			if authNeeded {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-				c.Abort()
-			} else {
+		accessTokenCookie, err := c.Request.Cookie(accessTokenCookieName)
+		if err == nil {
+			accessTokenString := accessTokenCookie.Value
+
+			var accessToken *jwt.Token
+			accessToken, err = jwt.Parse(accessTokenString, keyFunc)
+
+			if err == nil && accessToken.Valid {
+				accessTokenClaims := accessToken.Claims.(jwt.MapClaims)
+				fmt.Printf(logPrefix+"Access token valido per %s.\n", accessTokenClaims["uid"])
+				c.Set("uid", accessTokenClaims["uid"])
 				c.Next()
+				return
 			}
-			return
 		}
 
-		accessToken, err := jwt.Parse(accessTokenString, keyFunc)
+		fmt.Printf(logPrefix+"Access %s. Trying refresh token.\n", err)
 
-		if err == nil && accessToken.Valid {
+		refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
+		if err == nil {
+			refreshTokenString := refreshTokenCookie.Value
 
-			accessTokenClaims := accessToken.Claims.(jwt.MapClaims)
-			fmt.Printf("[AUTH] Access token valido per %s.\n", accessTokenClaims["uid"])
-			c.Set("uid", accessTokenClaims["uid"])
-			c.Next()
+			var refreshToken *jwt.Token
+			refreshToken, err = jwt.Parse(refreshTokenString, keyFunc)
 
-		} else {
-
-			fmt.Printf("[AUTH] Access %s. Trying refresh token.\n", err)
-			refreshToken, err := jwt.Parse(refreshTokenString, keyFunc)
-
-			if err != nil || !refreshToken.Valid {
-				fmt.Printf("[AUTH] Refresh %s :(\n", err)
-				if authNeeded {
-					c.JSON(http.StatusUnauthorized, err.Error())
-					c.Abort()
-				} else {
-					c.Next()
-				}
-
-			} else {
-
+			if err == nil && refreshToken.Valid {
 				uid := refreshToken.Claims.(jwt.MapClaims)["uid"].(string)
-				fmt.Printf("[AUTH] Trovato refresh token valido per %s.\n", uid)
+				fmt.Printf(logPrefix+"Trovato refresh token valido per %s.\n", uid)
 				refreshTokens(uid, c)
 				c.Set("uid", uid)
 				c.Next()
-
+				return
 			}
 		}
 
-	}
-}
+		fmt.Printf(logPrefix+"Refresh %s :(\n", err)
 
-func extractTokens(c *gin.Context) (string, string, error) {
-	accessCookie, err := c.Request.Cookie(accessTokenCookieName)
-	if err != nil {
-		return "", "", err
+		if authNeeded {
+			c.JSON(http.StatusUnauthorized, err.Error())
+			c.Abort()
+		} else {
+			c.Next()
+		}
 	}
-	refreshCookie, err := c.Request.Cookie(refreshTokenCookieName)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessCookie.Value, refreshCookie.Value, nil
 }
 
 func keyFunc(token *jwt.Token) (interface{}, error) {
@@ -82,7 +69,7 @@ func keyFunc(token *jwt.Token) (interface{}, error) {
 }
 
 func refreshTokens(uid string, c *gin.Context) error {
-	fmt.Printf("[AUTH] Refreshing tokens for %s.\n", uid)
+	fmt.Printf(logPrefix+"Refreshing tokens for %s.\n", uid)
 	_, _, err := GenerateTokensAndSetCookies(uid, c)
 	return err
 }

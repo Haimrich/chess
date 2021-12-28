@@ -10,7 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Connect() *mongo.Client {
+const databaseName = "chess"
+const UsersCollectionName = "users"
+
+func Connect() *mongo.Database {
 	MONGODB_URI := os.Getenv("MONGODB_URI")
 
 	if len(MONGODB_URI) == 0 {
@@ -27,14 +30,14 @@ func Connect() *mongo.Client {
 		log.Fatal(err)
 	}
 
-	return client
+	return client.Database(databaseName)
 }
 
-func Disconnect(client *mongo.Client) {
+func Disconnect(client *mongo.Database) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := client.Disconnect(ctx); err != nil {
+	if err := client.Client().Disconnect(ctx); err != nil {
 		log.Fatal(err)
 	}
 }

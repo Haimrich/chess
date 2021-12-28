@@ -11,19 +11,21 @@ import (
 const (
 	accessTokenCookieName  = "access-token"
 	refreshTokenCookieName = "refresh-token"
+	accessTokenDuration    = 15 * time.Minute
+	refreshTokenDuration   = 24 * time.Hour
 )
 
 var key = os.Getenv("JWT_SECRET_KEY")
 
 func GenerateTokensAndSetCookies(uid string, c *gin.Context) (string, string, error) {
 
-	accessTokenExpiration := time.Now().Add(15 * time.Minute)
+	accessTokenExpiration := time.Now().Add(accessTokenDuration)
 	accessToken, err := generateToken(uid, accessTokenExpiration, key)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshTokenExpiration := time.Now().Add(24 * time.Hour)
+	refreshTokenExpiration := time.Now().Add(refreshTokenDuration)
 	refreshToken, err := generateToken(uid, refreshTokenExpiration, key)
 	if err != nil {
 		return "", "", err
