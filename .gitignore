@@ -366,4 +366,5 @@ FodyWeavers.xsd
 Server/avatar
 Server/*.exe
 Server/server
+Server/credentials.txt
 .DS_Store
