@@ -1,53 +1,207 @@
 ﻿@page "/"
 
-@using  Client.Logic
+@using Client.Logic
+@using System.IO
 
+<div class="topbar @NavMenuCssClass">
+	<div class="top_navbar_inner">
+		<div class="nav-button-container" @onclick="ToggleNavMenu">
+			<span class="nav-button-icon"></span>
+		</div>
+		<div class="user">
+            <div class="user_info">
+				<div class="username"> @app.user.Username </div>
+				<div class="elo"> @app.user.Elo pts. </div>
+			</div>
+			<div class="avatar">
+				<img src=" @app.user.Avatar "/>
+			</div>
+		</div>
+	</div>
+</div>
 
-<section class="@game.ViewSideClass board">
-    @for (int i = 0; i < 8; i++) {
-        <div>
-            @for (int j = 0; j < 8; j++) {
-                <div></div>
-            }
-        </div>
-    }
+<div class="sidebar @NavMenuCssClass"  @onclick="ToggleNavMenu">
+	<nav class="flex-column">
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+				<span class="oi oi-home" aria-hidden="true"></span> Home
+			</NavLink>
+		</div>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="counter">
+				<span class="oi oi-plus" aria-hidden="true"></span> Counter
+			</NavLink>
+		</div>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="fetchdata">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
+			</NavLink>
+		</div>
+	</nav>
+</div>
 
-    @{
-        foreach (Piece p in game.Piecies) {
-            <div class="piece @p.Square.Position @p.Type" @onclick=@(() => game.SelectPiece(p))></div>
-        }
+<div class="panel_window">
+    <div class="panel_tape @app.currentPanelClass">
 
-        foreach (Move s in game.PossibleMoves) {
-            if (s.CapturedPiece is not null)
-            {
-                <div class="capture @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
-            } else
-            {
-                <div class="destination @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
-            }
-        }
+        <!-- REGISTRAZIONE -->
+        <section class="panel">
+            <div>
+                <p>
+                    <h2>Registrati</h2>
+                </p>
+                <p>
+                    <input type="text" placeholder="Username" @bind="auth.username" @bind:event="oninput" />
+                </p>
+                <p>
+                    <input type="password" placeholder="Password" @bind="auth.password" @bind:event="oninput" />
+                </p>
+                <p>
+                    <input type="password" placeholder="Conferma Password" @bind="auth.confirm_password"
+                        @bind:event="oninput" />
+                </p>
+                <p>
+                    <InputFile OnChange="@auth.LoadAvatar" accept="image/*" />
+                </p>
+                <p>
+                    <button @onclick="auth.Signup">Registrati</button>
+                </p>
+                <p>
+                    @auth.errorMessage
+                </p>
+                <p>
+                    o
+                </p>
+                <p>
+                    <button @onclick=@(() => app.ChangePanel("login"))>Login</button>
+                </p>
+            </div>
+        </section>
 
-        foreach (Square s in game.LastMoveSquares) {
-            <div class="lastmove @s.Position"></div>
-        }
+        <!-- LOGIN -->
+        <section class="panel">
+            <div>
+                <p>
+                    <h2>Accedi</h2>
+                </p>
+                <p>
+                    <input type="text" placeholder="Username" @bind="auth.username" @bind:event="oninput" id="username" />
+                </p>
+                <p>
+                    <input type="password" placeholder="Password" @bind="auth.password" @bind:event="oninput"
+                        id="password" />
+                </p>
+                <p>
+                    <button @onclick="auth.Login">Login</button>
+                </p>
+                <p>
+                    @auth.errorMessage
+                </p>
+                <p>
+                    o
+                </p>
+                <p>
+                    <button @onclick=@(() => app.ChangePanel("signup")) >Registrati</button>
+                </p>
+            </div>
+        </section>
 
-        if (game.SelectedPiece is Piece sp)
-        {
-            <div class="selected @sp.Square.Position"></div>
-        }
+        <!-- HOME -->
+        <section class="panel">
+            <div class="home_panel">
+                <div class="bottoni">
+                    <button>Gioca contro il computer</button>
+                </div>
+                <h2>Utenti online:</h2>
+                <div class="online_users">
+                    @{  
+                        foreach (User user in app.onlineUsers)
+                        {
+                            <div class="user">
+                                <div class="avatar"><img src="@user.Avatar" /></div> 
+                                <div class="info">
+                                    <span class="username">@user.Username</span>
+                                    <span class="elo">@user.Elo</span>
+                                </div>
+                                <div class="challenge">
+                                    <button>Sfida</button>
+                                </div>
+                           </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
 
-    }
-</section>
+        <!-- GAME -->
+        <section class="panel">
+            <section class="@game.ViewSideClass board">
+                @for (int i = 0; i < 8; i++)
+                {
+                    <div>
+                        @for (int j = 0; j < 8; j++)
+                        {
+                            <div></div>
+                        }
+                    </div>
+                }
 
-<section class="choose_piece @game.PromotionModalClass">
-    <div class="piece wq" @onclick=@(() => game.ChoosePromotion("queen"))></div>
-    <div class="piece wr" @onclick=@(() => game.ChoosePromotion("rook"))></div>
-    <div class="piece wb" @onclick=@(() => game.ChoosePromotion("bishop"))></div>
-    <div class="piece wn" @onclick=@(() => game.ChoosePromotion("knight"))></div>
-</section>
+                @{
+                    foreach (Piece p in game.Piecies)
+                    {
+                        <div class="piece @p.Square.Position @p.Type" @onclick=@(() => game.SelectPiece(p))></div>
+                    }
+
+                    foreach (Move s in game.PossibleMoves)
+                    {
+                        if (s.CapturedPiece is not null)
+                        {
+                            <div class="capture @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
+                        }
+                        else
+                        {
+                            <div class="destination @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
+                        }
+                    }
+
+                    foreach (Square s in game.LastMoveSquares)
+                    {
+                        <div class="lastmove @s.Position"></div>
+                    }
+
+                    if (game.SelectedPiece is Piece sp)
+                    {
+                        <div class="selected @sp.Square.Position"></div>
+                    }
+
+                }
+            </section>
+
+            <section class="choose_piece @game.PromotionModalClass">
+                <div class="piece wq" @onclick=@(() => game.ChoosePromotion("queen"))></div>
+                <div class="piece wr" @onclick=@(() => game.ChoosePromotion("rook"))></div>
+                <div class="piece wb" @onclick=@(() => game.ChoosePromotion("bishop"))></div>
+                <div class="piece wn" @onclick=@(() => game.ChoosePromotion("knight"))></div>
+            </section>
+
+        </section>
+
+    </div>
+</div>
 
 
 @code {
-    private Game game = new Game();
+    private Application app = Application.Instance;
+    private Auth auth = Application.Instance.auth;
+    private Game game = Application.Instance.game;
+
+
+    private bool collapseNavMenu = false;
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+
+    protected override void OnInitialized()
+    {
+        Application.Instance.updateUI += new Application.UpdateUI(this.StateHasChanged);
+    }
 
 }

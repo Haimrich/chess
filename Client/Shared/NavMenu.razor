@@ -1,10 +1,22 @@
-﻿
+﻿@using Client.Logic
+
+@using System.IO
+
 <div class="topbar @NavMenuCssClass">
 	<div class="top_navbar_inner">
 		<div class="nav-button-container" @onclick="ToggleNavMenu">
 			<span class="nav-button-icon"></span>
 		</div>
-		<a class="navbar-brand" href="">Client</a>
+		<div class="user">
+			<div class="avatar">
+				<img src=" @Application.Instance.user.Avatar "/>
+				@Application.Instance.currentPanelClass
+			</div>
+			<div class="user_info">
+				<div class="username"> @Application.Instance.user.Username </div>
+				<div class="elo"> @Application.Instance.user.Elo </div>
+			</div>
+		</div>
 	</div>
 </div>
 
@@ -37,4 +49,6 @@
 	{
 		collapseNavMenu = !collapseNavMenu;
 	}
+
+	private Application app = Application.Instance;
 }

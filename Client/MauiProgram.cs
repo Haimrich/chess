@@ -23,8 +23,6 @@ namespace Client
 				});
 
 			builder.Services.AddBlazorWebView();
-			builder.Services.AddSingleton<WeatherForecastService>();
-			builder.Services.AddSingleton<Board>();
 
 			return builder.Build();
 		}
