@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.7.7
-	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	go.mongodb.org/mongo-driver v1.8.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3

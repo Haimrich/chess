@@ -29,7 +29,10 @@ func (h *Handler) Login(c *gin.Context) {
 
 	var loginData LoginForm
 	if err := c.ShouldBind(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, "Riempi tutti i campi.")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Riempi tutti i campi." + err.Error(),
+		})
 		return
 	}
 
@@ -38,15 +41,24 @@ func (h *Handler) Login(c *gin.Context) {
 
 	if err := result.Decode(&user); err != nil {
 		if err == mongo.ErrNoDocuments {
-			c.String(http.StatusNotFound, "L'utente %s non esiste.", loginData.Username)
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("L'utente %s non esiste.", loginData.Username),
+			})
 		} else {
-			c.String(http.StatusInternalServerError, err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
 		}
 		return
 	}
 
 	if err := helpers.PasswordCompare(loginData.Password, user.Password); err != nil {
-		c.JSON(http.StatusUnauthorized, "Password errata.")
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Password errata.",
+		})
 		return
 	}
 
@@ -59,8 +71,10 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"auth": gin.H{
+		"success": true,
+		"data": gin.H{
 			"uid":           uid,
+			"username":      user.Username,
 			"access-token":  accessToken,
 			"refresh-token": refreshToken,
 		},

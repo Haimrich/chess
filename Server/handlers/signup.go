@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -45,6 +45,7 @@ func (h *Handler) Signup(c *gin.Context) {
 			Username: form.Username,
 			Password: helpers.GeneratePasswordHash(form.Password),
 			Elo:      0,
+			Status:   "offline",
 		}
 
 		if form.Avatar != nil {
@@ -70,7 +71,9 @@ func (h *Handler) Signup(c *gin.Context) {
 			splitFiletype := strings.Split(filetype, "/")
 			mimetype, extension := splitFiletype[0], splitFiletype[1]
 			if mimetype == "image" && (extension == "png" || extension == "jpeg" || extension == "gif" || extension == "bmp" || extension == "tiff") {
-				newFileName := uuid.New().String() + extension
+
+				//newFileName := uuid.New().String() + "." + extension
+				newFileName := primitive.NewObjectID().Hex() + "." + extension
 
 				err = c.SaveUploadedFile(form.Avatar, "avatar/"+newFileName)
 				if err != nil {

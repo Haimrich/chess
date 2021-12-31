@@ -1,7 +1,9 @@
 package websocket
 
 import (
+	"fmt"
 	"log"
+	"server/chess"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -11,7 +13,12 @@ type Client struct {
 	uid  string
 	hub  *Hub
 	conn *websocket.Conn
-	send chan []byte
+	send chan MessageContent
+
+	// Richieste inviate agli altri utenti, la chiave è l'uid
+	pendingChallenges map[string]bool
+	// Partita in corso, se esiste
+	currentGame *chess.Game
 }
 
 const (
@@ -47,7 +54,10 @@ func (c *Client) Reader() {
 			}
 			break
 		}
-		c.hub.channel <- message
+
+		fmt.Println(string(message))
+		// TODO Parsing cose in ricezione.
+		//c.hub.channel <- message
 	}
 }
 
@@ -68,22 +78,10 @@ func (c *Client) Writer() {
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
+			if err := c.conn.WriteJSON(message); err != nil {
 				return
 			}
-			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.send)
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
