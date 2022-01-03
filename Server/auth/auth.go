@@ -31,8 +31,8 @@ func GenerateTokensAndSetCookies(uid string, c *gin.Context) (string, string, er
 		return "", "", err
 	}
 
-	setCookie(accessTokenCookieName, accessToken, accessTokenExpiration, c)
-	setCookie(refreshTokenCookieName, refreshToken, refreshTokenExpiration, c)
+	setCookie(accessTokenCookieName, accessToken, accessTokenDuration, c)
+	setCookie(refreshTokenCookieName, refreshToken, refreshTokenDuration, c)
 
 	return accessToken, refreshToken, nil
 }
@@ -58,10 +58,10 @@ func generateToken(uid string, expirationTime time.Time, secret string) (string,
 	return tokenString, nil
 }
 
-func setCookie(name string, value string, expiration time.Time, c *gin.Context) {
-	c.SetCookie(name, value, expiration.Second(), "/", "", false, true)
+func setCookie(name string, value string, duration time.Duration, c *gin.Context) {
+	c.SetCookie(name, value, int(duration.Seconds()), "/", "", false, true)
 }
 
 func deleteCookie(name string, c *gin.Context) {
-	setCookie(name, "", time.Unix(0, 0), c)
+	setCookie(name, "", 0, c)
 }

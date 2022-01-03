@@ -1,34 +1,83 @@
 package websocket
 
-import (
-	"context"
-	"server/db"
-	"time"
+import "server/chess"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
-func (h *Hub) updateUserStatus(uid string, status string) {
-	id, _ := primitive.ObjectIDFromHex(uid)
-
-	var update bson.D
-	if status == "offline" {
-		update = bson.D{
-			{
-				Key: "$set", Value: bson.D{
-					{Key: "status", Value: status},
-					{Key: "last-seen", Value: time.Now()},
-				},
-			}}
-	} else {
-		update = bson.D{
-			{
-				Key: "$set", Value: bson.D{
-					{Key: "status", Value: status},
-				}},
-		}
+func (h *Hub) HandleChallengeRequest(source *Client, content map[string]interface{}) {
+	if source.CurrentGameId != "" {
+		return
 	}
 
-	h.db.Collection(db.UsersCollectionName).UpdateByID(context.TODO(), id, update)
+	uidm, ok := content["uid"]
+	if !ok {
+		return
+	}
+
+	uid := uidm.(string)
+	if h.clients[uid].CurrentGameId != "" {
+		h.SendChallengeBusyResponse(source.uid, h.clients[uid].username)
+		return
+	}
+
+	source.PendingChallenges[uid] = true
+	h.SendChallenge(uid, source.uid, source.username)
+}
+
+func (h *Hub) HandleChallengeDecline(source *Client, content map[string]interface{}) {
+	uidm, ok := content["uid"]
+	if !ok {
+		return
+	}
+	uid := uidm.(string)
+
+	_, exists := h.clients[uid].PendingChallenges[source.uid]
+	if exists {
+		delete(h.clients[uid].PendingChallenges, source.uid)
+		h.SendChallengeDeclinedResponse(uid, source.username)
+	}
+}
+
+func (h *Hub) HandleChallengeAccept(source *Client, content map[string]interface{}) {
+
+	if source.CurrentGameId != "" {
+		return
+	}
+
+	uidm, ok := content["uid"]
+	if !ok {
+		return
+	}
+
+	uid := uidm.(string)
+	if _, online := h.clients[uid]; !online {
+		h.SendChallengeOfflineResponse(source.uid)
+		return
+	}
+
+	_, challengeExists := h.clients[uid].PendingChallenges[source.uid]
+	if h.clients[uid].CurrentGameId != "" || !challengeExists {
+		h.SendChallengeInvalidResponse(source.uid)
+		return
+	}
+
+	NewGame(h, source.uid, uid)
+}
+
+func (h *Hub) HandlePlayMove(source *Client, content map[string]interface{}) {
+	if source.CurrentGameId != "" {
+		return
+	}
+
+	movec, ok := content["move"]
+	if !ok {
+		return
+	}
+
+	if move, ok := movec.(string); ok {
+		h.games[source.CurrentGameId].PlayMove <- &chess.Move{Player: source.uid, Move: move}
+	}
+
+}
+
+func (h *Hub) HandleResign(source *Client, content map[string]interface{}) {
+
 }

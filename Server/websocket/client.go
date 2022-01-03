@@ -1,24 +1,24 @@
 package websocket
 
 import (
-	"fmt"
 	"log"
-	"server/chess"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type Client struct {
-	uid  string
+	uid      string
+	username string
+
 	hub  *Hub
 	conn *websocket.Conn
-	send chan MessageContent
+	send chan Message
 
 	// Richieste inviate agli altri utenti, la chiave è l'uid
-	pendingChallenges map[string]bool
+	PendingChallenges map[string]bool
 	// Partita in corso, se esiste
-	currentGame *chess.Game
+	CurrentGameId string
 }
 
 const (
@@ -55,9 +55,7 @@ func (c *Client) Reader() {
 			break
 		}
 
-		fmt.Println(string(message))
-		// TODO Parsing cose in ricezione.
-		//c.hub.channel <- message
+		c.hub.ParseIncomingMessage(c, message)
 	}
 }
 
