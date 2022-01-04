@@ -109,23 +109,23 @@
         <section class="panel">
             <div class="home_panel">
                 <div class="bottoni">
-                    <button>Gioca contro il computer</button>
+                    <button @onclick=@(() => app.ChangePanel("game"))>Gioca contro il computer</button>
                 </div>
                 <h2>Utenti online:</h2>
                 <div class="online_users">
                     @{  
                         foreach (User user in app.onlineUsers)
                         {
-                            <div class="user">
+                            <div class="user" data-uid=@user.UID>
                                 <div class="avatar"><img src="@user.Avatar" /></div> 
                                 <div class="info">
                                     <span class="username">@user.Username</span>
                                     <span class="elo">@user.Elo</span>
                                 </div>
                                 <div class="challenge">
-                                    <button>Sfida</button>
+                                    <button @onclick=@(() => app.SendChallengeRequest(user.UID)) >Sfida</button>
                                 </div>
-                           </div>
+                            </div>
                         }
                     }
                 </div>
@@ -134,74 +134,135 @@
 
         <!-- GAME -->
         <section class="panel">
-            <section class="@game.ViewSideClass board">
-                @for (int i = 0; i < 8; i++)
-                {
-                    <div>
-                        @for (int j = 0; j < 8; j++)
-                        {
-                            <div></div>
-                        }
+            @if (game is not null)
+            {
+                <div class="game_panel">
+
+                    <div class="player">
+                        <div class="avatar">
+                            <img src=@game.opponent.Avatar />
+                        </div>
+                        <div class="user">
+                            <span class="username">@game.opponent.Username</span><span class="elo">@game.opponent.Elo pts.</span>
+                            <span class="captured_pieces"></span>
+                        </div>
+                        <div class="timer @ActiveClassTimerB">
+                            <span> @game.TimerPlayerB </span>
+                        </div>
                     </div>
-                }
+                    <div class="board_container">
+                        <div class="@BoardSideClass board">
+                            @for (int i = 0; i < 8; i++)
+                            {
+                                <div>
+                                    @for (int j = 0; j < 8; j++)
+                                    {
+                                        <div></div>
+                                    }
+                                </div>
+                            }
 
-                @{
-                    foreach (Piece p in game.Piecies)
-                    {
-                        <div class="piece @p.Square.Position @p.Type" @onclick=@(() => game.SelectPiece(p))></div>
-                    }
+                            @{
+                                foreach (Piece p in game.Piecies)
+                                {
+                                    <div class="piece @p.Square.Position @p.Type" @onclick=@(() => game.SelectPiece(p))></div>
+                                }
 
-                    foreach (Move s in game.PossibleMoves)
-                    {
-                        if (s.CapturedPiece is not null)
-                        {
-                            <div class="capture @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
-                        }
-                        else
-                        {
-                            <div class="destination @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
-                        }
-                    }
+                                foreach (Move s in game.PossibleMoves)
+                                {
+                                    if (s.CapturedPiece is not null)
+                                    {
+                                        <div class="capture @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
+                                    }
+                                    else
+                                    {
+                                        <div class="destination @s.End.Position" @onclick=@(() => game.PlayMove(s))></div>
+                                    }
+                                }
 
-                    foreach (Square s in game.LastMoveSquares)
-                    {
-                        <div class="lastmove @s.Position"></div>
-                    }
+                                foreach (Square s in game.LastMoveSquares)
+                                {
+                                    <div class="lastmove @s.Position"></div>
+                                }
 
-                    if (game.SelectedPiece is Piece sp)
-                    {
-                        <div class="selected @sp.Square.Position"></div>
-                    }
+                                if (game.SelectedPiece is Piece sp)
+                                {
+                                    <div class="selected @sp.Square.Position"></div>
+                                }
 
-                }
-            </section>
+                            }
 
-            <section class="choose_piece @game.PromotionModalClass">
-                <div class="piece wq" @onclick=@(() => game.ChoosePromotion("queen"))></div>
-                <div class="piece wr" @onclick=@(() => game.ChoosePromotion("rook"))></div>
-                <div class="piece wb" @onclick=@(() => game.ChoosePromotion("bishop"))></div>
-                <div class="piece wn" @onclick=@(() => game.ChoosePromotion("knight"))></div>
-            </section>
-
+                
+                </div>
+                </div>
+                <div class="player">
+                    <div class="avatar">
+                        <img src=@app.user.Avatar />
+                    </div>
+                    <div class="user">
+                        <span class="username">@app.user.Username</span><span class="elo">@app.user.Elo pts.</span>
+                        <span class="captured_pieces"></span>
+                    </div>
+                    <div class="timer @ActiveClassTimerA">
+                    <span> @game.TimerPlayerA </span>
+                    </div>
+                </div>
+            </div>
+            }
         </section>
 
     </div>
 </div>
 
 
+<div class="modal_bg @ModalClass">
+    <div class="modal choose_piece @PromotionModalClass">
+        <div class="piece wq" @onclick=@(() => game.ChoosePromotion("queen"))></div>
+        <div class="piece wr" @onclick=@(() => game.ChoosePromotion("rook"))></div>
+        <div class="piece wb" @onclick=@(() => game.ChoosePromotion("bishop"))></div>
+        <div class="piece wn" @onclick=@(() => game.ChoosePromotion("knight"))></div>
+    </div>
+
+    <div class="modal challenge_request @RequestModalClass">
+        @{
+            if (app.incomingRequest is not null)
+            {
+                <div class="message"> 
+                    @app.incomingRequest.message 
+                </div>
+                <div  class="buttons">
+                    <button @onclick=@(() => app.SendChallengeAccept(app.incomingRequest.uid))>Accetta</button>
+                    <button @onclick=@(() => app.SendChallengeDecline(app.incomingRequest.uid))>Rifiuta</button>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+
 @code {
-    private Application app = Application.Instance;
-    private Auth auth = Application.Instance.auth;
-    private Game game = Application.Instance.game;
+
+    Application app = Application.Instance;
+    Game game => Application.Instance.game;
+    Auth auth => Application.Instance.auth;
 
 
-    private bool collapseNavMenu = false;
-    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+    bool collapseNavMenu = false;
+    string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+
+    string BoardSideClass => game.PlayingSide == Side.White ? "white" : "black";
+
+    string ModalClass => (game is not null && game.DisplayPromotionModal) || app.incomingRequest is not null ? "visible" : "";
+    string PromotionModalClass =>  (game is not null && game.DisplayPromotionModal) ? "visible" : "";
+    string RequestModalClass =>  app.incomingRequest is not null ? "visible" : "";
+
+    string ActiveClassTimerA =>  (game is not null && game.PlayerToMove == 0) ? "active" : "";
+    string ActiveClassTimerB =>  (game is not null && game.PlayerToMove == 1) ? "active" : "";
 
     protected override void OnInitialized()
     {
-        Application.Instance.updateUI += new Application.UpdateUI(this.StateHasChanged);
+        Application.Instance.updateUI += new Application.UpdateUI(async () => InvokeAsync(StateHasChanged));
     }
 
 }

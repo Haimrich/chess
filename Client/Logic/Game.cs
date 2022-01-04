@@ -3,38 +3,42 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace Client.Logic
 {
     public class Game
     {
-        // Cose per GUI
         public List<Piece> Piecies;
         public Piece SelectedPiece;
         public List<Move> PossibleMoves;
         public List<Square> LastMoveSquares;
 
-        private Side _viewSide;
+        public Side PlayingSide;
         private PromotionMove PromotionMove;
-        
-        public string ViewSideClass { get => _viewSide == Side.White ? "white" : "black"; }
-        public string PromotionModalClass { get => PromotionMove is null ? "hidden" : ""; }
+
+        public bool DisplayPromotionModal { get => PromotionMove is not null; }
+        public User opponent;
+
+        public Timer ticker;
+        public int[] _PlayerSeconds;
+        public string TimerPlayerA { get => TimeSpan.FromSeconds(_PlayerSeconds[0]).ToString(@"hh\:mm\:ss").TrimStart(' ', '0', ':'); }
+        public string TimerPlayerB { get => TimeSpan.FromSeconds(_PlayerSeconds[1]).ToString(@"hh\:mm\:ss").TrimStart(' ', '0', ':'); }
 
 
-        // Altre cose
         private Board _board;
         private Side SideToMove;
+        public int PlayerToMove;
 
         int HalfmoveClock;
         int FullmoveClock;
 
-        public Game() {
+        public Game(Side playingSide, User opponent, int time) {
             _board = new Board("[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1]");
-            _viewSide = Side.White;
 
             Piecies = new List<Piece>();
             SelectedPiece = null;
-            
+
             PossibleMoves = new List<Move>();
             LastMoveSquares = new List<Square>();
 
@@ -43,6 +47,19 @@ namespace Client.Logic
             Piecies = _board.Piecies;
             SideToMove = Side.White;
             UpdatePossibleMoves();
+
+
+            // ----
+
+            PlayingSide = playingSide;
+            PlayerToMove = playingSide == SideToMove ? 0 : 1;
+            this.opponent = opponent;
+            _PlayerSeconds = new int[2] { time, time };
+            ticker = new System.Timers.Timer();
+            ticker.Interval = 1000;
+            ticker.Elapsed += UpdateTimers;
+
+            ticker.Start();
         }
 
         private void ClearSelectedSquare()
@@ -81,7 +98,7 @@ namespace Client.Logic
             if (m is CastlingMove cm)
             {
                 int post_rook_offset = cm.CastlingType == Castling.King ? +1 : -1;
-                _board[m.Start.Rank, m.Start.File+post_rook_offset].MoveTo(new Square(m.Start.Rank, m.Start.File + post_rook_offset));
+                _board[m.Start.Rank, m.Start.File + post_rook_offset].MoveTo(new Square(m.Start.Rank, m.Start.File + post_rook_offset));
             }
 
             ClearSelectedSquare();
@@ -95,7 +112,7 @@ namespace Client.Logic
         public void ChoosePromotion(string type)
         {
             switch (type) {
-                case "queen": 
+                case "queen":
                     PromotionMove.PromotionPiece = new Queen(SideToMove, PromotionMove.End.X, PromotionMove.End.Y);
                     break;
                 case "rook":
@@ -110,7 +127,7 @@ namespace Client.Logic
                 default:
                     break;
             }
-            
+
             PlayMove(PromotionMove);
             PromotionMove = null;
         }
@@ -137,6 +154,16 @@ namespace Client.Logic
             LastMoveSquares.Clear();
             LastMoveSquares.Add(m.Start);
             LastMoveSquares.Add(m.End);
+        }
+
+
+        private void UpdateTimers(Object source, System.Timers.ElapsedEventArgs e) {
+            _PlayerSeconds[PlayerToMove] -= 1;
+
+            if (_PlayerSeconds[PlayerToMove] == 0)
+                ((Timer)source).Enabled = false;
+
+            Application.Instance.updateUI.Invoke();
         }
 
     }

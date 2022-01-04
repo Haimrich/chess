@@ -120,6 +120,7 @@ namespace Client.Logic
             }
 
             canSubmit = true;
+            System.Diagnostics.Debug.WriteLine("Login Finito.");
         }
     }
 }
