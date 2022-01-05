@@ -163,6 +163,14 @@ namespace Client.Logic
                                 jsonData["content"]["time"].GetValue<int>()
                             );
                             break;
+                        case "move-played":
+                            var color = jsonData["content"]["color"].GetValue<string>();
+                            var move = jsonData["content"]["move"].GetValue<string>();
+                            var time = jsonData["content"]["time"].GetValue<double>();
+
+                            game.PlayReceivedMove(color,move,(int)Math.Round(time));
+                            updateUI.Invoke();
+                            break;
                     }
                 }
             } 
@@ -271,6 +279,19 @@ namespace Client.Logic
             user.Elo = resultNode["data"]["elo"].GetValue<int>();
 
             return user;
+        }
+
+        public async Task SendMove(string move)
+        {
+            var content = new JsonObject();
+            content.Add("move", move);
+            var jsonData = new JsonObject();
+            jsonData.Add("type", "play-move");
+            jsonData.Add("content", content);
+
+            await WebSocketSend(jsonData.ToJsonString());
+
+            System.Diagnostics.Debug.WriteLine(jsonData.ToJsonString());
         }
     }
 

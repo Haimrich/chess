@@ -28,6 +28,16 @@ namespace Client.Logic
                 _promotionPiece.Square.Y = End.Y;
             }
         }
-        
+
+        public override string GenerateNotation(Board board)
+        {
+            var pt = _promotionPiece.Type[1].ToString().ToUpper();
+
+            if (CapturedPiece == null)
+                return End.Position + "=" + pt;
+
+            return Start.Position[0] + "x" + End.Position + "=" + pt;
+        }
+
     }
 }

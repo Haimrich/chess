@@ -73,10 +73,10 @@ namespace Client.Logic
 
         public bool Equals(Square other)
         {
-            if (other is null) 
+            if (other is null)
                 return false;
 
-            if (Object.ReferenceEquals(this, other)) 
+            if (Object.ReferenceEquals(this, other))
                 return true;
 
             if (this.GetType() != other.GetType())
@@ -91,7 +91,7 @@ namespace Client.Logic
         {
             if (a is null)
             {
-                if (b is null) 
+                if (b is null)
                     return true;
 
                 return false;
@@ -104,12 +104,20 @@ namespace Client.Logic
 
         public Square CopyTranslate(int x, int y) {
             int file = _file + x;
-            int rank = _rank + y; 
+            int rank = _rank + y;
 
             if (file >= 0 && file < 8 && rank >= 0 && rank < 8)
                 return new Square(rank, file);
             else
                 return null;
-        } 
+        }
+
+        public static int FileToInt(string file) {
+            return letters.IndexOf(file);
+        }
+
+        public static int RankToInt(string rank) { 
+            return int.Parse(rank) - 1;
+        }
     }
 }

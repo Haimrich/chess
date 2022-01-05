@@ -34,6 +34,10 @@ namespace Client.Logic
                 }
             }
 
+            if (board.IsSquareInCheck(Color, Square)) {
+                return moves;
+            }
+
             // Castling
             Castling castlingColor = Color == Side.White ? Castling.White : Castling.Black;
             Castling castlingOpportunities = board.CastlingOpportunities & castlingColor;
@@ -50,7 +54,7 @@ namespace Client.Logic
                     }
                     castlingPath = castlingPath.CopyTranslate(dirs[6].Item1, dirs[6].Item2);
                 }
-
+                System.Diagnostics.Debug.WriteLine("KingCast: " + kingCastling);
                 if (kingCastling) {
                     moves.Add(new CastlingMove(Color, Square, Square.CopyTranslate(+2,0), board.CastlingOpportunities, newCastlingOpportunities, Castling.King, board.EnPassantSquare));
                 }
@@ -69,7 +73,7 @@ namespace Client.Logic
                     }
                     castlingPath = castlingPath.CopyTranslate(dirs[7].Item1, dirs[7].Item2);
                 }
-
+                System.Diagnostics.Debug.WriteLine("QuuenCast: " + queenCastling);
                 if (queenCastling)
                 {
                     moves.Add(new CastlingMove(Color, Square, Square.CopyTranslate(-2, 0), board.CastlingOpportunities, newCastlingOpportunities, Castling.Queen, board.EnPassantSquare));

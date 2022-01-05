@@ -301,6 +301,73 @@ namespace Client.Logic
             return false;
         }
 
+        public List<P> GetSimiliarPiecesTargetingSameSquare<P>(Side myColor, Square square) where P:Piece {
+            var pieces = new List<P>();
+
+            var orto_dirs = new[] { (0, 1), (0, -1), (1, 0), (-1, 0) };
+            var diag_dirs = new[] { (1, 1), (-1, -1), (1, -1), (-1, 1) };
+            var knight_squares = new[] { (1, 2), (-1, 2), (-2, 1), (-2, -1), (2, 1), (2, -1), (-1, -2), (1, -2) };
+
+            void checkDirections((int, int)[] dirs)
+            {
+                for (int i = 0; i < dirs.Length; i++)
+                {
+                    Square s = square.CopyTranslate(dirs[i].Item1, dirs[i].Item2);
+                    while (s is not null)
+                    {
+                        if (this[s] is not null)
+                        {
+                            if (this[s].Color == myColor && this[s] is P p)
+                            {
+                                pieces.Add(p);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        s = s.CopyTranslate(dirs[i].Item1, dirs[i].Item2);
+                    }
+                }
+            }
+
+            void checkSquares((int, int)[] squares)
+            {
+                for (int i = 0; i < squares.Length; i++)
+                {
+                    Square s = square.CopyTranslate(squares[i].Item1, squares[i].Item2);
+
+                    if (this[s] is not null && this[s].Color == myColor && this[s] is P p)
+                    {
+                        pieces.Add(p);
+                    }
+                }
+            }
+
+            switch (typeof(P))
+            {
+                case Type q when q == typeof(Queen):
+                    checkDirections(orto_dirs);
+                    checkDirections(diag_dirs);
+                    break;
+                case Type b when b == typeof(Bishop):
+                    checkDirections(diag_dirs);
+                    break;
+                case Type r when r == typeof(Rook):
+                    checkDirections(diag_dirs);
+                    break;
+                case Type n when n == typeof(Knight):
+                    checkSquares(knight_squares);
+                    break;
+                case Type p when p == typeof(Pawn):
+                    int pawn_dir = myColor == Side.White ? +1 : -1;
+                    checkSquares(new[] { (-1, pawn_dir), (1, pawn_dir) });
+                    break;
+            }
+
+            return pieces;
+        }
 
         private void SetKingPosition(Side color, Square position)
         {
