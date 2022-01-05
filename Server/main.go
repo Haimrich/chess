@@ -24,7 +24,9 @@ func main() {
 	router.POST("/login", auth.TokenAuthMiddleware(false), h.Login)
 	router.GET("/logout", auth.TokenAuthMiddleware(true), h.Logout)
 
-	router.GET("/user/:username", auth.TokenAuthMiddleware(true), h.User)
+	router.GET("/user/username/:username", auth.TokenAuthMiddleware(true), h.UserByUsername)
+	router.GET("/user/id/:uid", auth.TokenAuthMiddleware(true), h.UserById)
+
 	router.GET("/users/online", auth.TokenAuthMiddleware(true), h.OnlineUsers)
 
 	router.GET("/", auth.TokenAuthMiddleware(false), h.Home)

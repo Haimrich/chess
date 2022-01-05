@@ -63,7 +63,7 @@ func (h *Hub) HandleChallengeAccept(source *Client, content map[string]interface
 }
 
 func (h *Hub) HandlePlayMove(source *Client, content map[string]interface{}) {
-	if source.CurrentGameId != "" {
+	if source.CurrentGameId == "" {
 		return
 	}
 
@@ -73,7 +73,7 @@ func (h *Hub) HandlePlayMove(source *Client, content map[string]interface{}) {
 	}
 
 	if move, ok := movec.(string); ok {
-		h.games[source.CurrentGameId].PlayMove <- &chess.Move{Player: source.uid, Move: move}
+		h.games[source.CurrentGameId].PlayMove <- &chess.MoveMessage{Player: source.uid, Move: move}
 	}
 
 }

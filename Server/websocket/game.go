@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"fmt"
 	"math/rand"
 	"server/chess"
 	"time"
@@ -20,10 +21,10 @@ type Game struct {
 	ID           string
 	Players      [2]Player
 	playerToMove int // 0 o 1
-	board        chess.Board
+	board        *chess.Board
 	lastMoveTime time.Time
 
-	PlayMove chan *chess.Move
+	PlayMove chan *chess.MoveMessage
 	Resign   chan string
 
 	h  *Hub
@@ -58,10 +59,11 @@ func NewGame(h *Hub, uidPlayerA string, uidPlayerB string) {
 	game := &Game{
 		ID:           gameId,
 		Players:      [2]Player{playerA, playerB},
-		PlayMove:     make(chan *chess.Move, 2),
+		PlayMove:     make(chan *chess.MoveMessage, 2),
 		Resign:       make(chan string),
 		lastMoveTime: time.Time{},
 		playerToMove: playerToMove,
+		board:        chess.NewBoard(),
 		h:            h,
 		db:           h.db,
 	}
@@ -78,9 +80,14 @@ func (g *Game) Game() {
 	for {
 		select {
 		case move := <-g.PlayMove:
-			if move.Player == g.Players[g.playerToMove].ID && g.board.PlayMove(move) {
+			if move.Player == g.Players[g.playerToMove].ID && g.board.ParseMove(g.Players[g.playerToMove].Color, move.Move) {
+				g.board.Print()
 				g.updateTimers()
 				g.sendMessages(move.Move)
+				if g.checkEndGame() {
+					g.h.removeGame <- g
+					return
+				}
 				g.updatePlayerToMove()
 			}
 		case <-g.Players[0].Timer.C:
@@ -112,4 +119,25 @@ func (g *Game) sendMessages(move string) {
 
 func (g *Game) updatePlayerToMove() {
 	g.playerToMove = (g.playerToMove + 1) % 2
+}
+
+func (g *Game) checkEndGame() bool {
+	g.board.UpdatePossibleMoves()
+	whitePlayed := g.Players[g.playerToMove].Color == "white"
+
+	opponentKingInCheck := g.board.KingInCheck(!whitePlayed)
+	isStalemate := !g.board.HasPossibleMoves(!whitePlayed)
+
+	if isStalemate {
+		if opponentKingInCheck {
+			// Vittoria  del tizio che ha giocato
+			fmt.Println("Vittoria.")
+			return true
+		}
+		// Pareggio
+		fmt.Println("Pareggio.")
+		return true
+	}
+	return false
+
 }
