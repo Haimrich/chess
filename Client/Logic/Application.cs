@@ -11,9 +11,22 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text.Json.Nodes;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace Client.Logic
 {
+    public class MyHttpClientHandler : HttpClientHandler
+    {
+        // Serve per includere i cookie nelle richieste
+
+        protected override async Task<HttpResponseMessage>
+        SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+
+            return await base.SendAsync(request, cancellationToken);
+        }
+    }
     public class Application
     {
         public const string SERVER_URL = "http://localhost:8080";
@@ -66,13 +79,14 @@ namespace Client.Logic
         {
             auth = new Auth();
 
-            var cookies = new CookieContainer();
-            var httpHandler = new HttpClientHandler();
-            httpHandler.CookieContainer = cookies;
+            //var cookies = new CookieContainer();
+            var httpHandler = new MyHttpClientHandler();
+
+            //httpHandler.CookieContainer = cookies;
             http = new HttpClient(httpHandler);
 
             websocket = new ClientWebSocket();
-            websocket.Options.Cookies = cookies;
+            //websocket.Options.Cookies = cookies;
 
             currentPanelClass = "login";
             user = new User {
