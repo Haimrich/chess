@@ -677,6 +677,45 @@ input[type=text], input[type=password] {
 			min-width: 170px;
 		}
 
+	/* END GAME MODAL */
+	.end_game {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 30px;
+	}
+
+		.end_game .buttons {
+			padding-top: 15px;
+			display: flex;
+			justify-content: center;
+			min-width: 170px;
+		}
+
+		.end_game .message {
+			font-weight: bold;
+			font-size: 20px;
+		}
+
+		.end_game .message.victory {
+			color: #1fb241;
+		}
+
+		.end_game .message.lose {
+			color: #c32727;
+		}
+
+		.end_game .message.draw {
+			color: #656565;
+		}
+
+			.end_game .elo {
+				color: var(--darker-bg);
+				padding: 10px;
+				font-weight: bold;
+			}
+
 
 	/* BLAZOR */
 	#blazor-error-ui {

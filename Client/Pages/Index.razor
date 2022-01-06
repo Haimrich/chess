@@ -237,6 +237,23 @@
             }
         }
     </div>
+
+    <div class="modal end_game @EndGameModalClass">
+        @{
+            if (app.gameResult is not null)
+            {
+                <div class="message @app.gameResult.type"> 
+                    @app.gameResult.message 
+                </div>
+                <div class="elo"> 
+                   @app.gameResult.elo pts.
+                </div>
+                <div  class="buttons">
+                    <button @onclick="app.CloseGame">Chiudi</button>
+                </div>
+            }
+        }
+    </div>
 </div>
 
 
@@ -253,9 +270,10 @@
 
     string BoardSideClass => game.PlayingSide == Side.White ? "white" : "black";
 
-    string ModalClass => (game is not null && game.DisplayPromotionModal) || app.incomingRequest is not null ? "visible" : "";
+    string ModalClass => (game is not null && game.DisplayPromotionModal) || app.incomingRequest is not null || app.gameResult is not null ? "visible" : "";
     string PromotionModalClass =>  (game is not null && game.DisplayPromotionModal) ? "visible" : "";
     string RequestModalClass =>  app.incomingRequest is not null ? "visible" : "";
+    string EndGameModalClass => app.gameResult is not null ? "visible" : "";
 
     string ActiveClassTimerA =>  (game is not null && game.PlayerToMove == 0) ? "active" : "";
     string ActiveClassTimerB =>  (game is not null && game.PlayerToMove == 1) ? "active" : "";

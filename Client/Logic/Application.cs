@@ -48,6 +48,15 @@ namespace Client.Logic
             public string message;
         }
         public Request incomingRequest;
+
+        public class GameResult
+        {
+            public string message;
+            public string elo;
+            public string type;
+        }
+        public GameResult gameResult;
+
         public string modalMessage;
 
         public delegate void UpdateUI();
@@ -171,6 +180,12 @@ namespace Client.Logic
                             game.PlayReceivedMove(color,move,(int)Math.Round(time));
                             updateUI.Invoke();
                             break;
+                        case "end-game":
+                            var gameResult = jsonData["content"]["result"].GetValue<string>();
+                            var elo = jsonData["content"]["elo"].GetValue<int>();
+
+                            HandleEndGame(gameResult, elo);
+                            break;
                     }
                 }
             } 
@@ -227,6 +242,31 @@ namespace Client.Logic
             updateUI.Invoke();
        }
 
+        void HandleEndGame(string result, int elo) {
+            var message = "";
+            switch (result) {
+                case "victory":
+                    message = "Hai Vinto!";
+                    break;
+                case "lose":
+                    message = "Hai Perso";
+                    break;
+                case "draw":
+                    message = "Patta";
+                    break;
+            }
+            gameResult = new GameResult { elo = (elo > 0 ? "+" : "") + elo.ToString(), message = message, type = result };
+            updateUI.Invoke();
+        }
+
+        public void CloseGame()
+        {
+            ChangePanel("home");
+            gameResult = null;
+            updateUI.Invoke();
+            game = null;
+        }
+
         public async Task SendChallengeDecline(string uid)
         {
             var content = new JsonObject();
@@ -257,6 +297,7 @@ namespace Client.Logic
 
         async Task HandleGameStart(string opponentUid, string gameId, string color, int time)
         {
+            gameResult = null;
             game = new Game(color == "white" ? Side.White : Side.Black, await GetUserData(opponentUid), time);
 
             ChangePanel("game");
