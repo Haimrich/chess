@@ -6,7 +6,10 @@ import (
 	"server/db"
 	"server/handlers"
 	"server/websocket"
+	"strings"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +23,17 @@ func main() {
 	h := handlers.NewHandler(dbc, wsHub)
 
 	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost"},
+		AllowMethods:     []string{"GET", "POST"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return strings.Contains(origin, "http://localhost")
+		},
+		MaxAge:       12 * time.Hour,
+		AllowHeaders: []string{"Origin", "Content-Type", "Cookie"},
+	}))
+
 	router.POST("/signup", h.Signup)
 	router.POST("/login", auth.TokenAuthMiddleware(false), h.Login)
 	router.GET("/logout", auth.TokenAuthMiddleware(true), h.Logout)

@@ -91,9 +91,15 @@ func (g *Game) Game() {
 				g.updatePlayerToMove()
 			}
 		case <-g.Players[0].Timer.C:
-			// TODO player a perde
+			g.h.SendEndGame(g.Players[1].ID, "victory", +10)
+			g.h.SendEndGame(g.Players[0].ID, "lose", -10)
+			g.h.removeGame <- g
+			return
 		case <-g.Players[1].Timer.C:
-			// TODO player b perde
+			g.h.SendEndGame(g.Players[0].ID, "victory", +10)
+			g.h.SendEndGame(g.Players[1].ID, "lose", -10)
+			g.h.removeGame <- g
+			return
 		case <-g.Resign:
 			g.h.removeGame <- g
 			return
@@ -131,10 +137,14 @@ func (g *Game) checkEndGame() bool {
 	if isStalemate {
 		if opponentKingInCheck {
 			// Vittoria  del tizio che ha giocato
+			g.h.SendEndGame(g.Players[g.playerToMove].ID, "victory", +10)
+			g.h.SendEndGame(g.Players[(g.playerToMove+1)%2].ID, "lose", -10)
 			fmt.Println("Vittoria.")
 			return true
 		}
 		// Pareggio
+		g.h.SendEndGame(g.Players[g.playerToMove].ID, "draw", +2)
+		g.h.SendEndGame(g.Players[(g.playerToMove+1)%2].ID, "draw", +2)
 		fmt.Println("Pareggio.")
 		return true
 	}

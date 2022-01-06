@@ -63,7 +63,9 @@ func (h *Hub) Listen() {
 				close(client.send)
 			}
 		case message := <-h.channel:
-			h.clients[message.Destination].send <- message
+			if h.clients[message.Destination] != nil {
+				h.clients[message.Destination].send <- message
+			}
 		case game := <-h.addGame:
 			h.games[game.ID] = game
 			h.clients[game.Players[0].ID].CurrentGameId = game.ID

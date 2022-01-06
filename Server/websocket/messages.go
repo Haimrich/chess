@@ -129,3 +129,15 @@ func (h *Hub) SendMovePlayed(uid string, movedColor string, move string, remaini
 		Content:     content,
 	}
 }
+
+func (h *Hub) SendEndGame(uid string, result string, elo int) {
+	content := map[string]interface{}{
+		"result": result,
+		"elo":    elo,
+	}
+	h.channel <- Message{
+		Destination: uid,
+		MessageType: "end-game",
+		Content:     content,
+	}
+}
