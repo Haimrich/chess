@@ -355,7 +355,7 @@ namespace Client.Logic
                     checkDirections(diag_dirs);
                     break;
                 case Type r when r == typeof(Rook):
-                    checkDirections(diag_dirs);
+                    checkDirections(orto_dirs);
                     break;
                 case Type n when n == typeof(Knight):
                     checkSquares(knight_squares);

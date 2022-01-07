@@ -368,3 +368,5 @@ Server/*.exe
 Server/server
 Server/credentials.txt
 .DS_Store
+Engine/build
+.vscode

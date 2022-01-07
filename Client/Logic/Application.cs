@@ -75,6 +75,8 @@ namespace Client.Logic
         public delegate void UpdateUI();
         public UpdateUI updateUI;
 
+        public AudioService audioService;
+
         public Application()
         {
             auth = new Auth();
@@ -123,6 +125,7 @@ namespace Client.Logic
                 string jsonString = response.Content.ReadAsStringAsync().Result;
                 JsonNode resultNode = JsonNode.Parse(jsonString);
 
+                user.UID = resultNode["data"]["uid"].GetValue<string>();
                 // TODO avatar alternativo se non c'è
                 user.Avatar = resultNode["data"]["avatar"].GetValue<string>();
                 user.Elo = resultNode["data"]["elo"].GetValue<int>();
@@ -192,6 +195,7 @@ namespace Client.Logic
                             var time = jsonData["content"]["time"].GetValue<double>();
 
                             game.PlayReceivedMove(color,move,(int)Math.Round(time));
+                            await audioService.PlaySound("move");
                             updateUI.Invoke();
                             break;
                         case "end-game":
@@ -346,7 +350,8 @@ namespace Client.Logic
 
             await WebSocketSend(jsonData.ToJsonString());
 
-            System.Diagnostics.Debug.WriteLine(jsonData.ToJsonString());
+            System.Console.WriteLine(jsonData.ToJsonString());
+            //System.Diagnostics.Debug.WriteLine(jsonData.ToJsonString());
         }
     }
 

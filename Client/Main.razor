@@ -1,26 +1,31 @@
 ﻿@page "/"
 
+@inject IJSRuntime JSRuntime
+
 @using Client.Logic
 @using System.IO
 
-<div class="topbar @NavMenuCssClass">
+<div class="topbar @TobBarCssClass">
 	<div class="top_navbar_inner">
 		<div class="nav-button-container" @onclick="ToggleNavMenu">
 			<span class="nav-button-icon"></span>
 		</div>
-		<div class="user">
+        @if (app.user.UID != "")
+        {
+        <div class="user">
             <div class="user_info">
-				<div class="username"> @app.user.Username </div>
-				<div class="elo"> @app.user.Elo pts. </div>
-			</div>
-			<div class="avatar">
-				<img src=" @app.user.Avatar "/>
-			</div>
+			    <div class="username"> @app.user.Username </div>
+			    <div class="elo"> @app.user.Elo pts. </div>
+		    </div>
+		    <div class="avatar">
+			    <img src=" @app.user.Avatar "/>
+		    </div>
 		</div>
+        }
 	</div>
 </div>
 
-<div class="sidebar @NavMenuCssClass"  @onclick="ToggleNavMenu">
+<div class="sidebar @SideBarCssClass"  @onclick="ToggleNavMenu">
 	
 </div>
 
@@ -247,10 +252,11 @@
     Game game => Application.Instance.game;
     Auth auth => Application.Instance.auth;
 
-
     bool collapseNavMenu = false;
-    string NavMenuCssClass => collapseNavMenu ? "collapse" : "";
+    string SideBarCssClass => collapseNavMenu ? "collapse" : "";
     void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+    string TobBarCssClass => app.user.UID == "" ? "collapse" : "";
+
 
     string BoardSideClass => game.PlayingSide == Side.White ? "white" : "black";
 
@@ -265,6 +271,7 @@
     protected override void OnInitialized()
     {
         Application.Instance.updateUI += new Application.UpdateUI(async () => InvokeAsync(StateHasChanged));
+        Application.Instance.audioService = new AudioService(JSRuntime);
     }
 
 }

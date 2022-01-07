@@ -205,11 +205,13 @@ namespace Client.Logic
                     int fileStart = Square.FileToInt(match.Groups["pawn_file_start"].Value);
                     int rankEnd = Square.RankToInt(match.Groups["pawn_rank_end"].Value);
                     bool isCapture = match.Groups["pawn_file_end"].Success;
+                    string fileEndS = match.Groups["pawn_file_end"].Value;
 
                     Move rMove = Piecies.OfType<Pawn>()
                             .Where(p => p.Color == side && p.Square.File == fileStart)
                             .SelectMany(p => p.PossibleMoves)
-                            .Where(m => m.End.Rank == rankEnd && (m.CapturedPiece != null) == isCapture).First();
+                            .Where(m => m.End.Rank == rankEnd && (!isCapture || Square.FileToInt(fileEndS) == m.End.File))
+                            .First();
 
                     System.Diagnostics.Debug.Assert(rMove != null);
 

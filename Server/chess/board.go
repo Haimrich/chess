@@ -102,7 +102,8 @@ func (b *Board) PlayPawnMove(color string, startFile string, endRank string, end
 	for _, m := range b.possibleMoves[isWhite] {
 		if m.start.file == FileToIdx(startFile) && m.end.rank == RankToIdx(endRank) &&
 			b.GetPieceInSquare(&m.start).Has(Pawn) &&
-			b.GetPieceInSquare(&m.start).Has(White) == isWhite {
+			b.GetPieceInSquare(&m.start).Has(White) == isWhite &&
+			(endFile == "" || m.end.file == FileToIdx(endFile)) {
 
 			b.enPassantSquare = nil
 			upOrDown := +1
@@ -142,9 +143,13 @@ func (b *Board) PlayMove(color string, piece string, endRank string, endFile str
 
 	for _, m := range b.possibleMoves[isWhite] {
 		pieceType := LETTER_TO_PIECE[[]rune(strings.ToLower(piece))[0]]
+		pMovePiece := b.GetPieceInSquare(&m.start)
+		pMovePieceType := pMovePiece
+		pMovePieceType.Clear(White | Moved)
+
 		if m.end.file == end.file && m.end.rank == end.rank &&
-			b.GetPieceInSquare(&m.start).Has(pieceType) &&
-			b.GetPieceInSquare(&m.start).Has(White) == isWhite &&
+			pMovePieceType == pieceType &&
+			pMovePiece.Has(White) == isWhite &&
 			(startRank < 0 || m.start.rank == startRank) &&
 			(startFile < 0 || m.start.file == startFile) {
 			filteredMoves = append(filteredMoves, m)
