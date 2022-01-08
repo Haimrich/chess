@@ -13,6 +13,7 @@ class Move
     Piece piece;
 
     Move(Bitboard bitboard, Piece piece) : bitboard(bitboard), piece(piece) {}
+    Move() : bitboard(0), piece(KING) {}
 
 };
 

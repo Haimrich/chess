@@ -11,7 +11,7 @@ std::string trim(std::string& str, char c)
         str.erase(last);
 
     size_t first = str.find_first_not_of(c);
-    if (first != 0)
+    if (first > 0)
         str.erase(0, first);
 
     return str;

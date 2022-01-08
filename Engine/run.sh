@@ -4,4 +4,4 @@ docker run \
   --name engine \
   -v "$(pwd)":/app:ro \
   engine:latest \
-  /bin/bash -c "cmake app; make; ./engine"
+  /bin/bash -c "cmake -DCMAKE_BUILD_TYPE=Debug app; make; ./engine"

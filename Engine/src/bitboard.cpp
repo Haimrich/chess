@@ -3,17 +3,19 @@
 #include <string>
 #include <vector>
 
+#include <iostream>
+
 namespace engine {
 
     Bitboard::Bitboard(std::string square) {
         size_t file = std::string("abcdefgh").find(square.at(0));
         size_t rank = square.at(1) - '0';
 
-        bitboard = 1 << rank*file;
+        bitboard = 1UL << rank*file;
     }
 
     void Bitboard::Set(size_t pos) {
-        bitboard |= 1 << pos;
+        bitboard |= 1UL << pos;
     }
 
     void Bitboard::Clear(Bitboard b) {
@@ -26,6 +28,10 @@ namespace engine {
 
     bool Bitboard::IsZero() {
         return bitboard == 0;
+    }
+
+    bool Bitboard::IsRank(size_t rank) {
+        return Has(0xFFFF << rank);
     }
 
     Bitboard Bitboard::North() {
@@ -64,7 +70,7 @@ namespace engine {
         return Bitboard(bitboard & -bitboard);
     }
 
-    std::vector<Bitboard> Bitboard::Split(Bitboard add = 0) {
+    std::vector<Bitboard> Bitboard::Split(Bitboard add) {
         std::vector<Bitboard> v;
         while (!IsZero()) {
             auto b = LS1B();
@@ -74,4 +80,53 @@ namespace engine {
         return v;
     };
 
+    std::vector<Bitboard> Bitboard::Split() {
+        std::vector<Bitboard> v;
+        while (!IsZero()) {
+            auto b = LS1B();
+            v.push_back(b);
+            Clear(b);
+        }
+        return v;
+    };
+
+    // https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating
+    void Bitboard::Flip() {
+        U64& x = bitboard;
+
+        const U64 k1 = 0x5555555555555555;
+        const U64 k2 = 0x3333333333333333;
+        const U64 k4 = 0x0f0f0f0f0f0f0f0f;
+        const U64 k5 = 0x00FF00FF00FF00FF;
+        const U64 k6 = 0x0000FFFF0000FFFF;
+
+        x = ((x >> 1) & k1) | ((x & k1) << 1);
+        x = ((x >> 2) & k2) | ((x & k2) << 2);
+        x = ((x >> 4) & k4) | ((x & k4) << 4);
+        x = ((x >>  8) & k5)| ((x & k5) <<  8);
+        x = ((x >> 16) & k6)| ((x & k6) << 16);
+        x = ( x >> 32)      | ( x       << 32);
+    }
+
+    Bitboard Bitboard::Intersect(Bitboard b) {
+        return bitboard & b.bitboard;
+    }
+    
+    Bitboard Bitboard::Invert(Bitboard b) {
+        return bitboard ^ b.bitboard;
+    }
+
+    std::string Bitboard::ToString() {
+        std::cout << "Si rompe qui?" << std::endl;
+        size_t v;
+        for(v = 0; v < 64; v++)
+            if (Has(1UL << v)) break;
+        
+        std::cout << v << std::endl;
+
+        char file = std::string("abcdefgh").at(v % 8);
+        char rank = std::string("01234567").at(v / 8);
+
+        return std::string(1, file) + std::string(1, rank);
+    }
 }
