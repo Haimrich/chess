@@ -1,0 +1,75 @@
+#ifndef ENGINE_BITBOARD_H_
+#define ENGINE_BITBOARD_H_
+
+#include <string>
+#include <vector>
+
+namespace engine {
+
+class Bitboard {
+    private:
+        typedef uint_fast64_t U64;
+        U64 bitboard;
+
+        static const U64 notAFile = 0xfefefefefefefefe;
+        static const U64 notHFile = 0x7f7f7f7f7f7f7f7f;
+    public:
+        Bitboard() : bitboard(0) {}
+        Bitboard(U64 v) : bitboard(v) {}
+        Bitboard(std::string square);
+
+        void Set(size_t pos);
+        void Clear(Bitboard b);
+        bool Has(Bitboard b);
+        bool IsZero();
+
+        Bitboard North();
+        Bitboard South();
+        Bitboard East();
+        Bitboard West();
+
+        Bitboard NorthEast();
+        Bitboard NorthWest();
+        Bitboard SouthEast();
+        Bitboard SouthWest();
+
+        Bitboard LS1B();
+
+        std::vector<Bitboard> Split(Bitboard add);
+
+        /*
+        00000000
+        00000000
+        00000000
+        00000000
+        00000000
+        00000000
+        00000000 a3
+        00000000 a2
+     h1 00000000 a1
+        */
+
+        inline Bitboard operator+ (Bitboard const &b) {
+            return Bitboard(bitboard | b.bitboard);
+        }
+        
+        // per usare bitboard come chiave nelle mappe
+        bool operator== (const Bitboard &other) const
+        { 
+            return bitboard == other.bitboard;
+        }
+
+        friend struct BitboardHash;
+};
+
+// per usare bitboard come chiave nelle mappe
+struct BitboardHash
+{
+  std::size_t operator()(Bitboard k) const {
+    return k.bitboard;
+  }
+};
+
+}
+
+#endif

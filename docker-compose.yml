@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  engine:
+    image: engine
+    build:
+      context: .
+      dockerfile: ./engine/Dockerfile
