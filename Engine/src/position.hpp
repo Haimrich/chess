@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "global.hpp"
 #include "bitboard.hpp"
@@ -13,14 +14,11 @@ namespace engine {
 
     class Position {
         private:
-
-            Bitboard bitboards[SIDES][PIECES];
+            std::array<std::array<Bitboard, PIECES>, SIDES> bitboards;
 
             Bitboard enPassantSquare;
 
-            bool castlingRights[SIDES][CASTLINGS];
-        
-            bool kingInCheck;
+            std::array<std::array<bool, CASTLINGS>, SIDES> castlingRights;
 
         public:
             int score;
@@ -28,6 +26,8 @@ namespace engine {
             Position(std::string fen);
 
             Position() : Position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {}
+
+            Position(const Position &p);
 
             std::vector<Move> GetMoves();
 
@@ -46,12 +46,15 @@ namespace engine {
 
         public:
 
+        friend std::ostream& operator<< (std::ostream& os, const Position& p);
+
+        Position& operator=(const Position& other);
        
         bool operator== (const Position &other) const
         { 
             for (size_t s = 0; s < SIDES; s++)
                 for (size_t p = 0; p < PIECES; p++)
-                    if (bitboards[SIDES][PIECES] != other.bitboards[SIDES][PIECES])
+                    if (bitboards[s][p] != other.bitboards[s][p])
                         return false;
 
             if (enPassantSquare != other.enPassantSquare)
@@ -87,7 +90,7 @@ namespace engine {
             for(size_t s = 0; s < SIDES; s++)
                 for (size_t c = 0; c < CASTLINGS; c++)
                     if (k.castlingRights[s][c])
-                        castling.Set(s*SIDES+c);
+                        castling.Set(s*CASTLINGS+c);
 
             hash ^= tables.GetCastlingRandom(castling);
 

@@ -185,7 +185,8 @@ namespace Client.Logic
                                      "(?:=(?<promotion_piece>[QNRB]))?)|" +
                                      "(?<move>(?<piece>[RBQKPN])" +
                                      "(?<file_start>[a-h])?(?<rank_start>[1-8])?" +
-                                     "(?<capture>[x])?(?<file_end>[a-h])(?<rank_end>[1-8])))" +
+                                     "(?<capture>[x])?(?<file_end>[a-h])(?<rank_end>[1-8]))|" +
+                                     "(?<uci_move>^(?<uci_file_start>[a-h])(?<uci_rank_start>[1-8])(?<uci_file_end>[a-h])(?<uci_rank_end>[1-8])))" +
                                      "(?:[+#])?$";
 
                 Regex regex = new Regex(pattern);
@@ -275,6 +276,14 @@ namespace Client.Logic
 
                     return Piecies.Where(p => p.Color == side && p.GetType() == pieceType)
                         .SelectMany(p => p.PossibleMoves).Where(filterMoves).First();
+                }
+
+                if (match.Groups["uci_move"].Success)
+                {
+                    string startPosition = match.Groups["uci_file_start"].Value + match.Groups["uci_rank_start"].Value;
+                    string endPosition = match.Groups["uci_file_end"].Value + match.Groups["uci_rank_end"].Value;
+
+                    return Piecies.Where(p => p.Color == side).SelectMany(p => p.PossibleMoves).Where(m => m.End.Position == endPosition && m.Start.Position == startPosition).First();
                 }
             }
             catch (Exception ex) {

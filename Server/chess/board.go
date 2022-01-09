@@ -29,7 +29,8 @@ const regex string = `(?:(?P<castle>^[O0o]-[O0o](?P<long>-[O0o])?)|` +
 	`(?:=(?P<promotion_piece>[QNRB]))?)|` +
 	`(?P<move>(?P<piece>[RBQKPN])` +
 	`(?P<file_start>[a-h])?(?P<rank_start>[1-8])?` +
-	`(?P<capture>[x])?(?P<file_end>[a-h])(?P<rank_end>[1-8])))` +
+	`(?P<capture>[x])?(?P<file_end>[a-h])(?P<rank_end>[1-8]))|` +
+	`(?P<uci_move>^(?P<uci_file_start>[a-h])(?P<uci_rank_start>[1-8])(?P<uci_file_end>[a-h])(?P<uci_rank_end>[1-8])))` +
 	`(?:[+#])?$`
 
 var moveRegex *regexp.Regexp = regexp.MustCompile(regex)
@@ -69,6 +70,14 @@ func (b *Board) ParseMove(color string, move string) bool {
 		endRank := result["rank_end"]
 		endFile := result["file_end"]
 		return b.PlayMove(color, piece, endRank, endFile, startRank, startFile)
+	}
+
+	if _, isUciMove := result["uci_move"]; isUciMove {
+		startFile := result["uci_file_start"]
+		startRank := result["uci_rank_start"]
+		endRank := result["uci_rank_end"]
+		endFile := result["uci_file_end"]
+		return b.PlayUciMove(color, endRank, endFile, startRank, startFile)
 	}
 
 	return false
@@ -184,6 +193,52 @@ func (b *Board) PlayMove(color string, piece string, endRank string, endFile str
 	b.enPassantSquare = nil
 
 	return true
+}
+
+func (b *Board) PlayUciMove(color string, endRank string, endFile string, startRank string, startFile string) bool {
+	end := ParseSquare(endFile + endRank)
+	start := ParseSquare(startFile + startRank)
+
+	/*
+		var filteredMoves []Move
+		isWhite := color == "white"
+
+		for _, m := range b.possibleMoves[isWhite] {
+			if m.end.file == end.file && m.end.rank == end.rank &&
+				m.start.file == start.file && m.start.rank == start.rank {
+				filteredMoves = append(filteredMoves, m)
+			}
+		}
+
+		if len(filteredMoves) != 1 {
+			return false
+		}
+	*/
+
+	// Mossa pedone
+	if b.GetPieceInSquare(&start).Has(Pawn) {
+		if end.rank == 7 {
+			return b.PlayPawnMove(color, startFile, endRank, endFile, "Q")
+		} else {
+			return b.PlayPawnMove(color, startFile, endRank, endFile, "")
+		}
+	}
+
+	// Arrocco
+	if b.GetPieceInSquare(&start).Has(King) && start.file-end.file == 2 || end.file-start.file == 2 {
+		b.PlayCastling(color, start.file > end.file)
+	}
+
+	// Mossa normale
+	for c, p := range LETTER_TO_PIECE {
+		piece := b.GetPieceInSquare(&start)
+		piece.Clear(Moved)
+		if piece == p {
+			return b.PlayMove(color, strings.ToUpper(string(c)), endRank, endFile, startRank, startFile)
+		}
+	}
+
+	return false
 }
 
 func (b *Board) LoadFEN(fen string) {
@@ -547,4 +602,53 @@ func (b *Board) Print() {
 
 	fmt.Print("\n")
 
+}
+
+func (b *Board) GenerateFEN(sideToPlay string) (fen string) {
+	fen = ""
+
+	for rank := 7; rank >= 0; rank-- {
+		skip := 0
+		for file := 0; file < 8; file++ {
+			piece := b.board[rank][file]
+			piece.Clear(Moved)
+			if b.board[rank][file] != 0 {
+				if skip > 0 {
+					fen += strconv.Itoa(skip)
+				}
+				for c, p := range LETTER_TO_PIECE {
+					if p == piece {
+						fen += string(c)
+					}
+				}
+				skip = 0
+			} else {
+				skip++
+			}
+		}
+		if skip > 0 {
+			fen += strconv.Itoa(skip)
+		}
+		fen += "/"
+	}
+
+	fen = strings.TrimSuffix(fen, "/")
+	fen += " " + sideToPlay[0:1] + " "
+
+	for c, v := range CastlingLookup {
+		if b.castling&v != 0 {
+			fen += string(c)
+		}
+	}
+
+	if b.enPassantSquare == nil {
+		fen += " -"
+	} else {
+		fen += " " + b.enPassantSquare.String()
+	}
+
+	fen += " " + strconv.Itoa(b.halfmoveClock) + " " + strconv.Itoa(b.fullmoveClock)
+
+	fmt.Println("FEN: " + fen)
+	return
 }

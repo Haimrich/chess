@@ -1,8 +1,12 @@
 package websocket
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"server/chess"
 	"time"
 
@@ -72,6 +76,10 @@ func NewGame(h *Hub, uidPlayerA string, uidPlayerB string) {
 
 	h.SendGameStart(uidPlayerA, uidPlayerB, gameId, colorA, timePerPlayer)
 	h.SendGameStart(uidPlayerB, uidPlayerA, gameId, colorB, timePerPlayer)
+
+	if uidPlayerB == "computer" && colorB == "white" {
+		go game.queryChessEngine()
+	}
 }
 
 // Goroutine che gestisce timer ecc.
@@ -89,6 +97,7 @@ func (g *Game) Game() {
 					return
 				}
 				g.updatePlayerToMove()
+				go g.queryChessEngine()
 			}
 		case <-g.Players[0].Timer.C:
 			g.h.SendEndGame(g.Players[1].ID, "victory", +10)
@@ -150,4 +159,30 @@ func (g *Game) checkEndGame() bool {
 	}
 	return false
 
+}
+
+func (g *Game) queryChessEngine() {
+	if g.Players[g.playerToMove].ID != "computer" {
+		return
+	}
+
+	fen := g.board.GenerateFEN(g.Players[g.playerToMove].Color)
+
+	ENGINE_URL := "http://192.168.1.3:9080/"
+	queryValues := map[string]interface{}{"fen": fen, "budget": g.Players[g.playerToMove].RemainingTime}
+	queryJson, _ := json.Marshal(queryValues)
+
+	response, _ := http.Post(ENGINE_URL, "application/json", bytes.NewBuffer(queryJson))
+	move, _ := ioutil.ReadAll(response.Body)
+
+	fmt.Println("Mossa Engine: " + string(move))
+	if g.Players[g.playerToMove].Color == "black" {
+		move[0] = 'a' + 'h' - move[0]
+		move[2] = 'a' + 'h' - move[2]
+		move[1] = '1' + '8' - move[1]
+		move[3] = '1' + '8' - move[3]
+	}
+	fmt.Println("Mossa Engine Dopo: " + string(move))
+
+	g.PlayMove <- &chess.MoveMessage{Player: "computer", Move: string(move)}
 }

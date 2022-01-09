@@ -14,12 +14,13 @@ namespace engine {
 
 
 Move Explorer::Search(Position pos, int maxNodes, double timeBudget) {
+    std::cout << "Nuova ricerca avviata..." << std::endl;
     using namespace std::chrono;
 
     auto startTime = high_resolution_clock::now();
     nodes = 0;
 
-    for (int depth = 0; depth < MAX_DEPTH; depth++) {
+    for (int depth = 1; depth < MAX_DEPTH; depth++) {
         int lower = - MATE_VALUE * 3;
         int upper = + MATE_VALUE * 3;
 
@@ -28,10 +29,11 @@ Move Explorer::Search(Position pos, int maxNodes, double timeBudget) {
         while (lower < upper - EVAL_ROUGHNESS) {
             int gamma = (lower + upper + 1) / 2;
             score = Bound(pos, gamma, depth);
+            std::cout << "Gamma: " << gamma << std::endl;
 
             if (score >= gamma) 
                 lower = score;
-            else
+            if (score < gamma)
                 upper = score;
         }
         
@@ -41,6 +43,13 @@ Move Explorer::Search(Position pos, int maxNodes, double timeBudget) {
         if (std::abs(score) >= MATE_VALUE || nodes >= maxNodes || elapsedTime >= timeBudget) break;
     }
 
+    std::cout << "Dim: " << transpositionTable.size() << " - Trovato: " << (transpositionTable.find(pos) != transpositionTable.end()) << std::endl;
+    /*
+    for (auto m : transpositionTable) {
+        Position pos = m.first;
+        std::cout << "Hash: " << PositionHash()(pos) << " - Mossa: " << pos.MoveToString(m.second.move) << std::endl;
+    }
+    */
     return transpositionTable[pos].move;
 }
 
@@ -48,16 +57,17 @@ Move Explorer::Search(Position pos, int maxNodes, double timeBudget) {
 
 int Explorer::Bound(Position pos, int gamma, int depth) {
     nodes++;
-    std::cout << nodes << std::endl;
+    //std::cout << nodes << std::endl;
+    //std::cout << pos << std::endl;
 
     auto tpEntry = transpositionTable.find(pos);
-    bool foundPositionInTable = tpEntry != transpositionTable.end();
-    bool foundDeeper = false;
+    bool foundPositionInTable = (tpEntry != transpositionTable.end());
+    bool foundShallower = true;
 
     if (foundPositionInTable) {
         Result r = tpEntry->second;
-        foundDeeper = r.depth >= depth;
-        if (foundDeeper && ((r.score < r.gamma && r.score < gamma) || (r.score >= r.gamma && r.score >= gamma)))
+        foundShallower = depth >= r.depth;
+        if (r.depth >= depth && ( (r.score < r.gamma && r.score < gamma) || (r.score >= r.gamma && r.score >= gamma) ))
             return r.score;
     }
 
@@ -90,11 +100,11 @@ int Explorer::Bound(Position pos, int gamma, int depth) {
     // Stalemate check: best move loses king + null move is better
     if (depth > 0 && bestScore <= -MATE_VALUE && nullScore > -MATE_VALUE) bestScore = 0;
 
-    if (!foundPositionInTable || (foundDeeper && bestScore >= gamma)) {
-        transpositionTable[pos] = Result{depth: depth, score: bestScore, gamma: gamma, move: bestMove};
+    if (!foundPositionInTable || (foundShallower && bestScore >= gamma)) {
+        transpositionTable[pos] = {.depth= depth, .score= bestScore, .gamma= gamma, .move= bestMove};
 
-        if (transpositionTable.size() > MAX_TRANSPOSITION_TABLE_SIZE)
-            transpositionTable.clear();
+        //if (transpositionTable.size() > MAX_TRANSPOSITION_TABLE_SIZE)
+        //    transpositionTable.clear();
     }
 
     return bestScore; 

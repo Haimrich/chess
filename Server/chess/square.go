@@ -14,6 +14,10 @@ func (s *Square) Translate(offset *Square) *Square {
 	return &Square{rank: newRank, file: newFile}
 }
 
+func (s *Square) String() string {
+	return "abcdefgh"[s.file:s.file+1] + "12345678"[s.rank:s.rank+1]
+}
+
 func FileToIdx(file string) int {
 	return int(file[0] - 'a')
 }

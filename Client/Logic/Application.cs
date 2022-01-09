@@ -313,10 +313,32 @@ namespace Client.Logic
             updateUI.Invoke();
         }
 
+        public async Task SendChallengeComputer()
+        {
+            var content = new JsonObject();
+            var jsonData = new JsonObject();
+            jsonData.Add("type", "challenge-computer");
+            jsonData.Add("content", content);
+
+            await WebSocketSend(jsonData.ToJsonString());
+            incomingRequest = null;
+            updateUI.Invoke();
+        }
+
         async Task HandleGameStart(string opponentUid, string gameId, string color, int time)
         {
             gameResult = null;
-            game = new Game(color == "white" ? Side.White : Side.Black, await GetUserData(opponentUid), time);
+            if (opponentUid == "computer")
+            {
+                User user = new User();
+                user.Username = "Computer";
+                user.Elo = 2000;
+                game = new Game(color == "white" ? Side.White : Side.Black, user, time);
+            }
+            else
+            {
+                game = new Game(color == "white" ? Side.White : Side.Black, await GetUserData(opponentUid), time);
+            }
 
             ChangePanel("game");
             updateUI.Invoke();

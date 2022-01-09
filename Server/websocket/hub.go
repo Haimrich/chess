@@ -69,11 +69,15 @@ func (h *Hub) Listen() {
 		case game := <-h.addGame:
 			h.games[game.ID] = game
 			h.clients[game.Players[0].ID].CurrentGameId = game.ID
-			h.clients[game.Players[1].ID].CurrentGameId = game.ID
+			if h.clients[game.Players[1].ID] != nil {
+				h.clients[game.Players[1].ID].CurrentGameId = game.ID
+			}
 		case game := <-h.removeGame:
 			delete(h.games, game.ID)
 			h.clients[game.Players[0].ID].CurrentGameId = ""
-			h.clients[game.Players[1].ID].CurrentGameId = ""
+			if h.clients[game.Players[1].ID] != nil {
+				h.clients[game.Players[1].ID].CurrentGameId = ""
+			}
 		}
 	}
 }

@@ -30,6 +30,8 @@ func (h *Hub) ParseIncomingMessage(source *Client, messageBytes []byte) {
 		h.HandlePlayMove(source, message.Content)
 	case "resign":
 		h.HandleResign(source, message.Content)
+	case "challenge-computer":
+		h.HandleChallengeComputer(source)
 	default:
 		fmt.Println(logPrefix + "Tipo messaggio non valido: " + string(message.MessageType))
 	}

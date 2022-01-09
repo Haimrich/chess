@@ -16,7 +16,7 @@
 
 namespace engine {
 
-Position::Position(std::string fen) {
+Position::Position(std::string fen) : enPassantSquare(0), score(0) {
     score = 0;
 
     std::unordered_map<char, Piece> charToPiece = {
@@ -53,7 +53,7 @@ Position::Position(std::string fen) {
         } else {
             Piece p = charToPiece[toUpper(c)];
             Side s = isLower(c) ? BLACK : WHITE;
-            bitboards[s][p].Set(rank*file);
+            bitboards[s][p].Set(rank*8+file);
             file++;
         }
 	}
@@ -83,7 +83,6 @@ Position::Position(std::string fen) {
     std::string enPassant;
     getline(iss, enPassant, ' ');
 
-    enPassantSquare = 0;
 	if (enPassant.compare("-") != 0) {
 		enPassantSquare = Bitboard(enPassant);
 	}
@@ -108,6 +107,12 @@ Position::Position(std::string fen) {
 	}
 }
 
+Position::Position(const Position &p) {
+    bitboards = p.bitboards;
+    enPassantSquare = p.enPassantSquare;
+    castlingRights = p.castlingRights;
+    score = p.score;
+}
 
 std::vector<Move> Position::GetMoves() {
     std::vector<Move> moves;
@@ -118,7 +123,8 @@ std::vector<Move> Position::GetMoves() {
     Bitboard pawns = bitboards[WHITE][PAWN];
     Bitboard pawnCaptureSquares = enPassantSquare + std::accumulate(std::begin(bitboards[BLACK]), std::end(bitboards[BLACK]), Bitboard(0));
     Bitboard occupiedSquares = pawnCaptureSquares + ourPieces;
-    for (Bitboard p = pawns.LS1B(); !pawns.IsZero(); pawns.Clear(p)) {
+
+    for (Bitboard p = pawns.LS1B(); !pawns.IsZero(); pawns.Clear(p), p = pawns.LS1B()) {
         // Pedoni - Movimento
         Bitboard up = p.North();
         if (!occupiedSquares.Has(up)) {
@@ -130,8 +136,7 @@ std::vector<Move> Position::GetMoves() {
         }
         // Pedoni - Cattura
         Bitboard possibleDestinations = Tables::Instance().GetPawnPattern(p);
-        possibleDestinations.Has(pawnCaptureSquares);
-        auto possibleMoves = possibleDestinations.Split(p);
+        auto possibleMoves = possibleDestinations.Intersect(pawnCaptureSquares).Split(p);
         for (auto m : possibleMoves)
             moves.emplace_back(m, PAWN);
     }
@@ -146,52 +151,50 @@ std::vector<Move> Position::GetMoves() {
         for (auto m : possibleMoves)
             moves.emplace_back(m, KING);
 
-        // TODO Castling
-        if (!kingInCheck) 
+        // Castling
+        if (castlingRights[WHITE][KING_CASTLING] && !squareInCheck(bitboards[WHITE][KING])) 
         {
-            if (castlingRights[WHITE][KING_CASTLING]) 
-            {
-                Bitboard kCastlingPathMask(0b01100000);
-                if (!kCastlingPathMask.Has(occupiedSquares)) {
-                    Bitboard pathSquare = bitboards[WHITE][KING];
-                    bool pathInCheck = false;
-                    for (size_t i = 0; i < 2; i++) {
-                        pathSquare = pathSquare.East();
-                        if (squareInCheck(pathSquare)) {
-                            pathInCheck = true;
-                            break;
-                        }
-                    }
-                    if (!pathInCheck) {
-                        moves.emplace_back(pathSquare + bitboards[WHITE][KING], KING);
+            Bitboard kCastlingPathMask(0b01100000ULL);
+            if (!kCastlingPathMask.Has(occupiedSquares)) {
+                Bitboard pathSquare = bitboards[WHITE][KING];
+                bool pathInCheck = false;
+                for (size_t i = 0; i < 2; i++) {
+                    pathSquare = pathSquare.East();
+                    if (squareInCheck(pathSquare)) {
+                        pathInCheck = true;
+                        break;
                     }
                 }
-            }
-            if (castlingRights[WHITE][QUEEN_CASTLING]) 
-            {
-                Bitboard qCastlingPathMask(0b00001110);
-                if (!qCastlingPathMask.Has(occupiedSquares)) {
-                    Bitboard pathSquare = bitboards[WHITE][KING];
-                    bool pathInCheck = false;
-                    for (size_t i = 0; i < 3; i++) {
-                        pathSquare = pathSquare.West();
-                        if (squareInCheck(pathSquare)) {
-                            pathInCheck = true;
-                            break;
-                        }
-                    }
-                    if (!pathInCheck) {
-                        moves.emplace_back(pathSquare.East() + bitboards[WHITE][KING], KING);
-                    }
+                if (!pathInCheck) {
+                    moves.emplace_back(pathSquare + bitboards[WHITE][KING], KING);
                 }
             }
         }
+        if (castlingRights[WHITE][QUEEN_CASTLING] && !squareInCheck(bitboards[WHITE][KING])) 
+        {
+            Bitboard qCastlingPathMask(0b00001110ULL);
+            if (!qCastlingPathMask.Has(occupiedSquares)) {
+                Bitboard pathSquare = bitboards[WHITE][KING];
+                bool pathInCheck = false;
+                for (size_t i = 0; i < 3; i++) {
+                    pathSquare = pathSquare.West();
+                    if (squareInCheck(pathSquare)) {
+                        pathInCheck = true;
+                        break;
+                    }
+                }
+                if (!pathInCheck) {
+                    moves.emplace_back(pathSquare.East() + bitboards[WHITE][KING], KING);
+                }
+            }
+        }
+        
     }
 
     // CAVALLI
 
     Bitboard knights = bitboards[WHITE][KNIGHT];
-    for (Bitboard k = knights.LS1B(); !knights.IsZero(); knights.Clear(k)) {
+    for (Bitboard k = knights.LS1B(); !knights.IsZero(); knights.Clear(k), k = knights.LS1B() ) {
         Bitboard possibleDestinations = Tables::Instance().GetKnightPattern(k);
         possibleDestinations.Clear(ourPieces);
         auto possibleMoves = possibleDestinations.Split(k);
@@ -209,24 +212,32 @@ std::vector<Move> Position::GetMoves() {
     // Regina, Torri e alfiere
 
     Bitboard queens = bitboards[WHITE][QUEEN];
-    for (Bitboard q = queens.LS1B(); !queens.IsZero(); queens.Clear(q)) 
+    for (Bitboard q = queens.LS1B(); !queens.IsZero(); queens.Clear(q), q = queens.LS1B() ) 
         for (size_t d = 0; d < 8; d++) 
-            for (Bitboard s = dirsFunc[d](q); !s.IsZero() && !ourPieces.Has(s); s = dirsFunc[d](s)) 
+            for (Bitboard s = dirsFunc[d](q); !s.IsZero() && !ourPieces.Has(s); s = dirsFunc[d](s)) {
                 moves.emplace_back(s + q, QUEEN);
+                if (occupiedSquares.Has(s)) break;
+            }
 
     Bitboard rooks = bitboards[WHITE][ROOK];
-    for (Bitboard r = rooks.LS1B(); !rooks.IsZero(); rooks.Clear(r)) 
+    for (Bitboard r = rooks.LS1B(); !rooks.IsZero(); rooks.Clear(r), r = rooks.LS1B() ) 
         for (size_t d = 0; d < 4; d++) 
-            for (Bitboard s = dirsFunc[d](r); !s.IsZero() && !ourPieces.Has(s); s = dirsFunc[d](s)) 
+            for (Bitboard s = dirsFunc[d](r); !s.IsZero() && !ourPieces.Has(s); s = dirsFunc[d](s)) {
                 moves.emplace_back(s + r, ROOK);
+                if (occupiedSquares.Has(s)) break;
+            }
+
 
     Bitboard bishops = bitboards[WHITE][BISHOP];
-    for (Bitboard b = bishops.LS1B(); !bishops.IsZero(); bishops.Clear(b)) 
-        for (size_t d = 0; d < 8; d++) 
-            for (Bitboard s = dirsFunc[d](b); !s.IsZero() && !ourPieces.Has(s); s = dirsFunc[d](s)) 
+    for (Bitboard b = bishops.LS1B(); !bishops.IsZero(); bishops.Clear(b), b = bishops.LS1B()) 
+        for (size_t d = 4; d < 8; d++) 
+            for (Bitboard s = dirsFunc[d](b); !s.IsZero() && !ourPieces.Has(s); s = dirsFunc[d](s)) {
                 moves.emplace_back(s + b, BISHOP);
+                if (occupiedSquares.Has(s)) break;
+            }
 
 
+    std::cout << "Mosse possibili: " << moves.size()  << std::endl;
     return moves;
 }
 
@@ -246,33 +257,49 @@ bool Position::squareInCheck(Bitboard square) {
 
     // Proiettare raggi
     Bitboard ourPieces = std::accumulate(std::begin(bitboards[WHITE]), std::end(bitboards[WHITE]), Bitboard(0));
+    Bitboard enemyPieces = std::accumulate(std::begin(bitboards[BLACK]), std::end(bitboards[BLACK]), Bitboard(0));
     Bitboard enemyRookAndQueen = bitboards[BLACK][ROOK] + bitboards[BLACK][QUEEN];
     Bitboard enemyBishopAndQueen = bitboards[BLACK][BISHOP] + bitboards[BLACK][QUEEN];
 
-    for (Bitboard s = square.North(); !s.IsZero() && !ourPieces.Has(s); s = s.North())
+    for (Bitboard s = square.North(); !s.IsZero() && !ourPieces.Has(s); s = s.North()) {
         if (enemyRookAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
 
-    for (Bitboard s = square.South(); !s.IsZero() && !ourPieces.Has(s); s = s.South())
+    for (Bitboard s = square.South(); !s.IsZero() && !ourPieces.Has(s); s = s.South()) {
         if (enemyRookAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
     
-    for (Bitboard s = square.East(); !s.IsZero() && !ourPieces.Has(s); s = s.East())
+    for (Bitboard s = square.East(); !s.IsZero() && !ourPieces.Has(s); s = s.East()) {
         if (enemyRookAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
 
-    for (Bitboard s = square.West(); !s.IsZero() && !ourPieces.Has(s); s = s.West())
+    for (Bitboard s = square.West(); !s.IsZero() && !ourPieces.Has(s); s = s.West()) {
         if (enemyRookAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
 
-    for (Bitboard s = square.NorthEast(); !s.IsZero() && !ourPieces.Has(s); s = s.NorthEast())
+    for (Bitboard s = square.NorthEast(); !s.IsZero() && !ourPieces.Has(s); s = s.NorthEast()) {
         if (enemyBishopAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
 
-    for (Bitboard s = square.NorthWest(); !s.IsZero() && !ourPieces.Has(s); s = s.NorthWest())
+    for (Bitboard s = square.NorthWest(); !s.IsZero() && !ourPieces.Has(s); s = s.NorthWest()) {
         if (enemyBishopAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
 
-    for (Bitboard s = square.SouthEast(); !s.IsZero() && !ourPieces.Has(s); s = s.SouthEast())
+    for (Bitboard s = square.SouthEast(); !s.IsZero() && !ourPieces.Has(s); s = s.SouthEast()) {
         if (enemyBishopAndQueen.Has(s)) return true;
+        if (enemyPieces.Has(s)) break;
+    }
 
-    for (Bitboard s = square.SouthWest(); !s.IsZero() && !ourPieces.Has(s); s = s.SouthWest())
+    for (Bitboard s = square.SouthWest(); !s.IsZero() && !ourPieces.Has(s); s = s.SouthWest()) {
         if (enemyBishopAndQueen.Has(s)) return true;
-
+        if (enemyPieces.Has(s)) break;
+    }
 
     return false;
 }
@@ -289,7 +316,7 @@ Position Position::Flip() {
         for (auto& b : bs)
             b.Flip();
 
-    np.score = -np.score;
+    np.score = -score;
 
     return np;
 }
@@ -300,37 +327,40 @@ int Position::Evaluate(Move m) {
 
     // Togli valore pezzo in pos vecchio e aggiungi quello in pos nuova
     Tables& tables = Tables::Instance();
-    score = tables.GetPieceValue(m.piece, endPiece) - tables.GetPieceValue(m.piece, startPiece); 
+    int newScore = tables.GetPieceValue(m.piece, endPiece) - tables.GetPieceValue(m.piece, startPiece); 
 
     // Se cattura aggiungi pure valore del pezzo catturato
     for (size_t p = 0; p < PIECES; p++)
-        if (bitboards[BLACK][p].Has(endPiece)) 
-            score += tables.GetPieceValue((Piece)p, endPiece);
+        if (bitboards[BLACK][p].Has(endPiece)) {
+            Bitboard flippedEndPiece = endPiece;
+            flippedEndPiece.Flip();
+            newScore += tables.GetPieceValue((Piece)p, flippedEndPiece);
+        }
 
     // Castling
-	if (startPiece == bitboards[WHITE][KING] && (m.bitboard == Bitboard(0b00001010) || m.bitboard == Bitboard(0b00101000) ) ) {
-        if (m.bitboard == Bitboard(0b00001010)) {
-            score += tables.GetPieceValue(ROOK, Bitboard(0b000000100));
-            score -= tables.GetPieceValue(ROOK, Bitboard(0b000000001));
-        } else if (m.bitboard == Bitboard(0b00101000)) {
-            score += tables.GetPieceValue(ROOK, Bitboard(0b000100000));
-            score -= tables.GetPieceValue(ROOK, Bitboard(0b100000000));
+	if (startPiece == bitboards[WHITE][KING]) {
+        if (m.bitboard == Bitboard(0b01010000ULL) ) { // Arrocco lato re
+            newScore += tables.GetPieceValue(ROOK, Bitboard(0b00100000ULL));
+            newScore -= tables.GetPieceValue(ROOK, Bitboard(0b10000000ULL));
+        } else if (m.bitboard == Bitboard(0b00010100ULL) ) { // Arrocco lato regina
+            newScore += tables.GetPieceValue(ROOK, Bitboard(0b00001000ULL));
+            newScore -= tables.GetPieceValue(ROOK, Bitboard(0b00000001ULL));
         }
 	}
 
     // Pedoni
     if (bitboards[WHITE][PAWN].Has(startPiece)) {
         // Ultimo rank -> Promozione
-        if (Bitboard(0xFF00000000000000).Has(endPiece)) { 
-            score += tables.GetPieceValue(QUEEN, endPiece) - tables.GetPieceValue(PAWN, startPiece);
+        if (endPiece.IsRank(7)) { 
+            newScore += tables.GetPieceValue(QUEEN, endPiece) - tables.GetPieceValue(PAWN, startPiece);
         }
         // EnPassant
         if(endPiece == enPassantSquare) {
-            score += tables.GetPieceValue(PAWN, endPiece.South());
+            newScore += tables.GetPieceValue(PAWN, endPiece.South());
         }
     }
 
-    return score;
+    return newScore;
 }
 
 Position Position::MakeMove(Move m) {
@@ -343,47 +373,43 @@ Position Position::MakeMove(Move m) {
 
     for (size_t p = 0; p < PIECES; p++)
         if (p == m.piece)
-            np.bitboards[WHITE][p].Invert(m.bitboard);
+            np.bitboards[WHITE][p] = np.bitboards[WHITE][p].Invert(m.bitboard);
         else 
             np.bitboards[WHITE][p].Clear(m.bitboard);
     
-    if (startPiece.Has(0b00000001)) // Torre lato re mossa
-        np.castlingRights[WHITE][KING_CASTLING] = false;
-	else if (startPiece.Has(0b10000000)) // Torre lato regina mossa
+    if (startPiece.Has(0b00000001ULL)) // Torre lato regina mossa
         np.castlingRights[WHITE][QUEEN_CASTLING] = false;
+	else if (startPiece.Has(0b10000000ULL)) // Torre lato re mossa
+        np.castlingRights[WHITE][KING_CASTLING] = false;
     
-    if (endPiece.Has(1UL << 63))
-        np.castlingRights[BLACK][QUEEN_CASTLING] = false;
-	else if (endPiece.Has(1UL << (63-8)))
+    if (endPiece.Has(1UL << 63)) // Torre lato re mangiata
         np.castlingRights[BLACK][KING_CASTLING] = false;
+	else if (endPiece.Has(1UL << (63-8))) // Torre lato regina mangiata
+        np.castlingRights[BLACK][QUEEN_CASTLING] = false;
 
     if (startPiece == bitboards[WHITE][KING]) {
 		np.castlingRights[WHITE][QUEEN_CASTLING] = false;
 		np.castlingRights[WHITE][KING_CASTLING] = false;
 
-        if (m.bitboard == Bitboard(0b00001010)) 
-            np.bitboards[WHITE][ROOK].Invert(Bitboard(0b000000101));
+        if (m.bitboard == Bitboard(0b00010100ULL))  // Arrocco lato regina bianco
+            np.bitboards[WHITE][ROOK] = np.bitboards[WHITE][ROOK].Invert(Bitboard(0b00001001ULL));
         
-        if (m.bitboard == Bitboard(0b00101000)) {
-            np.bitboards[WHITE][ROOK].Invert(Bitboard(0b100100000));
-        }
+        if (m.bitboard == Bitboard(0b01010000ULL)) // Arrocco lato re bianco
+            np.bitboards[WHITE][ROOK] = np.bitboards[WHITE][ROOK].Invert(Bitboard(0b10100000ULL));
 	}
     
     if (m.piece == PAWN) {
-		// Promozione perchè arrivato in ultima traversa
-        if (Bitboard(0xFF00000000000000).Has(endPiece)) { 
+		// Promozione se arrivato in ultima traversa
+        if (endPiece.IsRank(7)) { 
             np.bitboards[WHITE][QUEEN].Invert(endPiece);
             np.bitboards[WHITE][PAWN].Clear(endPiece);
-        // Aggiornare en passant perchè doppio passo
-        } else if (Bitboard(0x00000000FF000000).Has(endPiece)) {
+        // Aggiornare en passant se doppio passo
+        } else if (endPiece.IsRank(3) && startPiece.IsRank(1)) {
             np.enPassantSquare = endPiece.South();
-        }
-        // Cattura enpassant
-        if (endPiece == enPassantSquare) {
+        // Cattura enpassant  
+        } else if (endPiece == enPassantSquare) {
             Bitboard enPassantTarget = endPiece.South();
-            for (size_t p = 0; p < PIECES; p++)
-                if (np.bitboards[BLACK][p].Has(enPassantTarget)) 
-                    np.bitboards[BLACK][p].Invert(enPassantTarget);
+            np.bitboards[BLACK][PAWN].Clear(enPassantTarget);
         }
 	}
 
@@ -395,10 +421,39 @@ std::string Position::MoveToString(Move m) {
     Bitboard startPiece = bitboards[WHITE][m.piece].Intersect(m.bitboard);
     Bitboard endPiece = startPiece.Invert(m.bitboard);
 
-    std::cout << startPiece;
-    std::cout << endPiece;
-    
+   // std::cout << startPiece << std::endl;
+   // std::cout << endPiece << std::endl;
+
     return startPiece.ToString() + endPiece.ToString();
+}
+
+Position& Position::operator=(const Position& p) { 
+    bitboards = p.bitboards;
+    enPassantSquare = p.enPassantSquare;
+    castlingRights = p.castlingRights;
+    score = p.score;
+
+    return *this;
+}
+
+std::ostream& operator<< (std::ostream& os, const Position& p) {
+    os << "POSITION - Hash: " << PositionHash()(p) << std::endl;
+    std::string pieceToSymbol[] = {" ♔", " ♕", " ♖", " ♗", " ♘", " ♙", " ♚", " ♛", " ♜", " ♝", " ♞", " ♟︎"};
+
+    for (int rank = 7; rank >= 0; rank--) {
+        for (int file = 0; file < 8; file++) {
+            bool pieceFound = false;
+            for (size_t side = 0; side < SIDES; side++)
+                for (size_t piece = 0; piece < PIECES; piece++) 
+                    if (p.bitboards[side][piece].Has(Bitboard(1UL << (rank*8+file) ))) {
+                        os << pieceToSymbol[side*PIECES+piece];
+                        pieceFound = true;
+                    }
+            if (!pieceFound) os << " ·";
+       }
+       os << std::endl;
+    }
+    return os;
 }
 
 }

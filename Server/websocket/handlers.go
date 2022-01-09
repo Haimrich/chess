@@ -79,5 +79,14 @@ func (h *Hub) HandlePlayMove(source *Client, content map[string]interface{}) {
 }
 
 func (h *Hub) HandleResign(source *Client, content map[string]interface{}) {
+	// TODO
+}
 
+func (h *Hub) HandleChallengeComputer(source *Client) {
+
+	if source.CurrentGameId != "" {
+		return
+	}
+
+	NewGame(h, source.uid, "computer")
 }

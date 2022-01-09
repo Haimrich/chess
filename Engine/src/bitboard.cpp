@@ -9,9 +9,9 @@ namespace engine {
 
     Bitboard::Bitboard(std::string square) {
         size_t file = std::string("abcdefgh").find(square.at(0));
-        size_t rank = square.at(1) - '0';
+        size_t rank = square.at(1) - '1';
 
-        bitboard = 1UL << rank*file;
+        bitboard = 1UL << (rank*8+file);
     }
 
     void Bitboard::Set(size_t pos) {
@@ -22,7 +22,7 @@ namespace engine {
         bitboard &= ~b.bitboard;
     }
 
-    bool Bitboard::Has(Bitboard b) {
+    bool Bitboard::Has(Bitboard b) const {
         return bitboard & b.bitboard;
     }
 
@@ -31,7 +31,7 @@ namespace engine {
     }
 
     bool Bitboard::IsRank(size_t rank) {
-        return Has(0xFFFF << rank);
+        return Has(Bitboard(0xFFULL << rank*8));
     }
 
     Bitboard Bitboard::North() {
@@ -94,11 +94,11 @@ namespace engine {
     void Bitboard::Flip() {
         U64& x = bitboard;
 
-        const U64 k1 = 0x5555555555555555;
-        const U64 k2 = 0x3333333333333333;
-        const U64 k4 = 0x0f0f0f0f0f0f0f0f;
-        const U64 k5 = 0x00FF00FF00FF00FF;
-        const U64 k6 = 0x0000FFFF0000FFFF;
+        const U64 k1 = 0x5555555555555555ULL;
+        const U64 k2 = 0x3333333333333333ULL;
+        const U64 k4 = 0x0f0f0f0f0f0f0f0fULL;
+        const U64 k5 = 0x00FF00FF00FF00FFULL;
+        const U64 k6 = 0x0000FFFF0000FFFFULL;
 
         x = ((x >> 1) & k1) | ((x & k1) << 1);
         x = ((x >> 2) & k2) | ((x & k2) << 2);
@@ -117,15 +117,15 @@ namespace engine {
     }
 
     std::string Bitboard::ToString() {
-        std::cout << "Si rompe qui?" << std::endl;
+       // std::cout << "Si rompe qui?" << std::endl;
         size_t v;
         for(v = 0; v < 64; v++)
             if (Has(1UL << v)) break;
         
-        std::cout << v << std::endl;
+        //std::cout << v << std::endl;
 
         char file = std::string("abcdefgh").at(v % 8);
-        char rank = std::string("01234567").at(v / 8);
+        char rank = std::string("12345678").at(v / 8);
 
         return std::string(1, file) + std::string(1, rank);
     }

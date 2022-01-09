@@ -371,3 +371,4 @@ Server/credentials.txt
 Engine/build
 .vscode
 Engine Old
+*.zip

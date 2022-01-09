@@ -21,8 +21,8 @@ bool isLower(char c) {
     return c >='a' && c <= 'z';
 }
 
-bool toUpper(char c) {
-    return c - 'a' + 'A';
+char toUpper(char c) {
+    return isLower(c) ? c - 'a' + 'A' : c;
 }
 
 bool isDigit(char c) {

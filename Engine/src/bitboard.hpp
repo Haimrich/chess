@@ -13,16 +13,26 @@ class Bitboard {
         typedef uint_fast64_t U64;
         U64 bitboard;
 
-        static const U64 notAFile = 0xfefefefefefefefe;
-        static const U64 notHFile = 0x7f7f7f7f7f7f7f7f;
+        static const U64 notAFile = 0xfefefefefefefefeULL;
+        static const U64 notHFile = 0x7f7f7f7f7f7f7f7fULL;
     public:
-        Bitboard() : bitboard(0) {}
+        Bitboard() : bitboard(0ULL) {}
         Bitboard(U64 v) : bitboard(v) {}
         Bitboard(std::string square);
 
+        // Copia e assegnazione
+        Bitboard(const Bitboard& b) { 
+            bitboard = b.bitboard; 
+        }
+
+        Bitboard& operator=(const Bitboard& other) { 
+            bitboard = other.bitboard; 
+            return *this;
+        }
+
         void Set(size_t pos);
         void Clear(Bitboard b);
-        bool Has(Bitboard b);
+        bool Has(Bitboard b) const;
         bool IsZero();
         bool IsRank(size_t rank);
 
@@ -77,7 +87,7 @@ class Bitboard {
 
         friend std::ostream& operator<< (std::ostream& os, const Bitboard& b)
         { 
-            os << std::bitset<64>(b.bitboard) << std::endl;
+            os << std::bitset<64>(b.bitboard);
             return os;
         }
 

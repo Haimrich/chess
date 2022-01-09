@@ -15,6 +15,15 @@ class Move
     Move(Bitboard bitboard, Piece piece) : bitboard(bitboard), piece(piece) {}
     Move() : bitboard(0), piece(KING) {}
 
+    Move(const Move& other) : bitboard(other.bitboard), piece(other.piece) {}
+
+    Move& operator=(const Move& other) {
+        bitboard = other.bitboard;
+        piece = other.piece;
+        return *this;
+    }
+
+
 };
 
 }
