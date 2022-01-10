@@ -363,12 +363,13 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Cose mie
-Server/avatar
-Server/*.exe
-Server/server
-Server/credentials.txt
+backend/avatar
+backend/*.exe
+backend/backend
+backend/server
+backend/credentials.txt
 .DS_Store
-Engine/build
+engine/build
 .vscode
-Engine Old
+engine Old
 *.zip
