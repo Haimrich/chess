@@ -1,13 +1,14 @@
 package websocket
 
 import (
+	"backend/chess"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"server/chess"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -161,6 +162,10 @@ func (g *Game) checkEndGame() bool {
 
 }
 
+// Interrogazione dell'engine
+
+var ENGINE_ENDPOINT string = os.Getenv("ENGINE_ENDPOINT")
+
 func (g *Game) queryChessEngine() {
 	if g.Players[g.playerToMove].ID != "computer" {
 		return
@@ -168,11 +173,10 @@ func (g *Game) queryChessEngine() {
 
 	fen := g.board.GenerateFEN(g.Players[g.playerToMove].Color)
 
-	ENGINE_URL := "http://192.168.1.3:9080/"
 	queryValues := map[string]interface{}{"fen": fen, "budget": g.Players[g.playerToMove].RemainingTime}
 	queryJson, _ := json.Marshal(queryValues)
 
-	response, _ := http.Post(ENGINE_URL, "application/json", bytes.NewBuffer(queryJson))
+	response, _ := http.Post(ENGINE_ENDPOINT, "application/json", bytes.NewBuffer(queryJson))
 	move, _ := ioutil.ReadAll(response.Body)
 
 	fmt.Println("Mossa Engine: " + string(move))

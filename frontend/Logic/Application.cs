@@ -29,7 +29,10 @@ namespace Client.Logic
     }
     public class Application
     {
-        public const string SERVER_URL = "http://localhost:8080";
+        //public const string SERVER_URL = "http://localhost:8080";
+        public const string SERVER_URL = "http://localhost/api";
+        public const string WEBSOCKET_URL = "ws://localhost/ws";
+
 
         private static Application instance = null;
 
@@ -109,7 +112,7 @@ namespace Client.Logic
         }
 
         public async Task AuthSuccess() {
-            var wsc = WebSocketConnect("ws://localhost:8080/ws");
+            var wsc = WebSocketConnect(WEBSOCKET_URL);
             var udr = http.GetAsync(SERVER_URL + "/user/username/" + user.Username);
 
             var response = await udr;

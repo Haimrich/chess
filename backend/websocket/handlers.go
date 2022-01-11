@@ -1,6 +1,6 @@
 package websocket
 
-import "server/chess"
+import "backend/chess"
 
 func (h *Hub) HandleChallengeRequest(source *Client, content map[string]interface{}) {
 	if source.CurrentGameId != "" {

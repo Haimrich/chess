@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"backend/auth"
+	"backend/db"
+	"backend/helpers"
+	"backend/models"
 	"context"
 	"fmt"
 	"net/http"
-	"server/auth"
-	"server/db"
-	"server/helpers"
-	"server/models"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"

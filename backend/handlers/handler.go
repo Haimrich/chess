@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"server/websocket"
+	"backend/websocket"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )

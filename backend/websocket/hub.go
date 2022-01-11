@@ -1,10 +1,10 @@
 package websocket
 
 import (
+	"backend/db"
+	"backend/models"
 	"context"
 	"fmt"
-	"server/db"
-	"server/models"
 	"time"
 
 	"github.com/gorilla/websocket"

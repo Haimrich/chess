@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"backend/db"
+	"backend/models"
 	"context"
 	"net/http"
-	"server/db"
-	"server/models"
 
 	"github.com/gin-gonic/gin"
 

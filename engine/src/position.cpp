@@ -237,7 +237,7 @@ std::vector<Move> Position::GetMoves() {
             }
 
 
-    std::cout << "Mosse possibili: " << moves.size()  << std::endl;
+    //std::cout << "Mosse possibili: " << moves.size()  << std::endl;
     return moves;
 }
 

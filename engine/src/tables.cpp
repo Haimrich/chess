@@ -25,7 +25,7 @@ Tables::Tables() {
     // Valore posizionale dei pezzi
     for(size_t p = 0; p < PIECES; p++) 
         for (int i = 0; i < 64; i++)
-            pieceValueLookup[p][Bitboard(1UL << (63-i) )] = PIECE_SQUARE_TABLES[p][i];
+            pieceValueLookup[p][Bitboard(1UL << i)] = PIECE_SQUARE_TABLES[p][i];
 
     // RANDOM COSE PER FARE L'HASH ZOBRISK DELLE POSIZIONI
     

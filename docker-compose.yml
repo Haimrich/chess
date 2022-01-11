@@ -1,8 +1,40 @@
-version: '3.4'
+version: '3.8'
 
 services:
+  frontend:
+    container_name: chess_frontend
+    image: chess_frontend
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - 80:80
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  backend:
+    container_name: chess_backend
+    image: chess_backend
+    build: ./backend
+    depends_on:
+      - mongodb
+      - engine
+    environment:
+        MONGODB_URI: mongodb://mongodb:27017/chess
+        ENGINE_ENDPOINT: http://engine:9080
+
   engine:
-    image: engine
-    build:
-      context: .
-      dockerfile: ./engine/Dockerfile
+    container_name: chess_engine
+    image: chess_engine
+    build: 
+      context: ./engine
+      dockerfile: Dockerfile
+
+  mongodb:
+    container_name: chess_mongodb
+    image: mongo:latest
+    volumes:
+      - chess_mongodb:/data/db
+
+volumes:
+  chess_mongodb:

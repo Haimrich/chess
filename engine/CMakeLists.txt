@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Og -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_INSTALL_PREFIX "/home/enrico/Desktop/Engine")
+set(BUILD_SHARED_LIBS FALSE)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -19,13 +20,13 @@ file(GLOB SOURCES CONFIGURE_DEPENDS
         "${PROJECT_SOURCE_DIR}/src/*.?pp" 
     )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} )
 
 find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
-target_link_libraries(${PROJECT_NAME} PkgConfig::Pistache)
+target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::Pistache)
 
 find_package(RapidJSON)
 
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${PROJECT_SOURCE_DIR}/bin")
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${PROJECT_SOURCE_DIR}/bin" )
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${PROJECT_SOURCE_DIR}/..")
