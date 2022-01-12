@@ -55,8 +55,8 @@ Bitboard Tables::GetKnightPattern(Bitboard square) {
     return knightLookup[square];
 }
 
-int Tables::GetPieceValue(Piece piece, Bitboard b) {
-    return pieceValueLookup[piece][b];
+int Tables::GetPieceValue(Piece piece, Bitboard square) {
+    return pieceValueLookup[piece][square];
 }
 
 size_t Tables::GetPieceRandom(Piece piece, Bitboard square) {

@@ -18,8 +18,8 @@ namespace Client.Logic
 
         public string Avatar { 
             get {
-                if (_avatar == null) 
-                    return "TODO";
+                if (_avatar == null || _avatar == "") 
+                    return "images/default_user_image.png";
 
                 return Application.SERVER_URL + "/avatar/" + _avatar;
             }

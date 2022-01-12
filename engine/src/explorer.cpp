@@ -18,6 +18,7 @@ Move Explorer::Search(Position pos, int maxNodes, double timeBudget) {
     using namespace std::chrono;
 
     auto startTime = high_resolution_clock::now();
+    double elapsedTime;
     nodes = 0;
 
     for (int depth = 1; depth < MAX_DEPTH; depth++) {
@@ -29,27 +30,29 @@ Move Explorer::Search(Position pos, int maxNodes, double timeBudget) {
         while (lower < upper - EVAL_ROUGHNESS) {
             int gamma = (lower + upper + 1) / 2;
             score = Bound(pos, gamma, depth);
-            std::cout << "Gamma: " << gamma << std::endl;
+            //std::cout << "Gamma: " << gamma << " - Lower: " << lower  << " - Upper: " << upper  << std::endl;
 
-            if (score >= gamma) 
-                lower = score;
-            if (score < gamma)
-                upper = score;
+            if (score >= gamma) lower = score;
+
+            if (score < gamma)  upper = score;
         }
         
         auto currentTime = high_resolution_clock::now();
-        double elapsedTime = duration_cast<seconds>(currentTime - startTime).count();
+        elapsedTime = duration_cast<seconds>(currentTime - startTime).count();
 
         if (std::abs(score) >= MATE_VALUE || nodes >= maxNodes || elapsedTime >= timeBudget) break;
     }
 
-    std::cout << "Dim: " << transpositionTable.size() << " - Trovato: " << (transpositionTable.find(pos) != transpositionTable.end()) << std::endl;
+    std::cout << "ELABORAZIONE CONCLUSA in " << elapsedTime << " secondi." << std::endl;
+    std::cout << "Transposition Table Size: " << transpositionTable.size() << " - Total Nodes: " << nodes << " - KNodes/s: " << (double)nodes/(elapsedTime*1000) << std::endl;
     /*
     for (auto m : transpositionTable) {
         Position pos = m.first;
         std::cout << "Hash: " << PositionHash()(pos) << " - Mossa: " << pos.MoveToString(m.second.move) << std::endl;
     }
     */
+    std::cout << "Prima: " << std::endl << pos << std::endl;
+    std::cout << "Dopo: " << std::endl << pos.MakeMove(transpositionTable[pos].move).Flip() << std::endl;
     return transpositionTable[pos].move;
 }
 
@@ -65,7 +68,7 @@ int Explorer::Bound(Position pos, int gamma, int depth) {
     bool foundShallower = true;
 
     if (foundPositionInTable) {
-        Result r = tpEntry->second;
+        Entry r = tpEntry->second;
         foundShallower = depth >= r.depth;
         if (r.depth >= depth && ( (r.score < r.gamma && r.score < gamma) || (r.score >= r.gamma && r.score >= gamma) ))
             return r.score;
@@ -79,7 +82,7 @@ int Explorer::Bound(Position pos, int gamma, int depth) {
 
     if (nullScore >= gamma) return nullScore;
 
-    int bestScore = -3 * MATE_VALUE;
+    int bestScore = - 3 * MATE_VALUE;
     Move bestMove;
 
     for (auto& m : pos.GetMoves()) {
@@ -101,10 +104,10 @@ int Explorer::Bound(Position pos, int gamma, int depth) {
     if (depth > 0 && bestScore <= -MATE_VALUE && nullScore > -MATE_VALUE) bestScore = 0;
 
     if (!foundPositionInTable || (foundShallower && bestScore >= gamma)) {
-        transpositionTable[pos] = {.depth= depth, .score= bestScore, .gamma= gamma, .move= bestMove};
-
         //if (transpositionTable.size() > MAX_TRANSPOSITION_TABLE_SIZE)
         //    transpositionTable.clear();
+
+        transpositionTable[pos] = Entry(depth, bestScore, gamma, bestMove);
     }
 
     return bestScore; 

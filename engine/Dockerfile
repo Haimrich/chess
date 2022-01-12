@@ -23,7 +23,7 @@ FROM pistache-env as final
 WORKDIR /app
 COPY --from=build-env /app/build/engine .
 EXPOSE 9080
-ENTRYPOINT ./engine
+ENTRYPOINT ["./engine"]
 
 # serve libreria quindi niente alpine
 #FROM alpine

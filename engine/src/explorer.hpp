@@ -11,16 +11,19 @@ namespace engine {
 class Explorer {
     private:
 
-        struct Result {
+        struct Entry {
             int depth;
             int score;
             int gamma;
             Move move;
+
+            Entry(int d, int s, int g, Move m) : depth(d), score(s), gamma(g), move(m) {}
+            Entry() : Entry(0,0,0,Move()) {}
         };
 
         int nodes;
 
-        std::unordered_map<Position, Result, PositionHash> transpositionTable;
+        std::unordered_map<Position, Entry, PositionHash> transpositionTable;
 
     public:
 

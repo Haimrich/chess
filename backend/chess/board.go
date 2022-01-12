@@ -2,6 +2,7 @@ package chess
 
 import (
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
@@ -77,7 +78,11 @@ func (b *Board) ParseMove(color string, move string) bool {
 		startRank := result["uci_rank_start"]
 		endRank := result["uci_rank_end"]
 		endFile := result["uci_file_end"]
-		return b.PlayUciMove(color, endRank, endFile, startRank, startFile)
+		if b.PlayUciMove(color, endRank, endFile, startRank, startFile) {
+			return true
+		} else {
+			return b.playRandomMove(color)
+		}
 	}
 
 	return false
@@ -114,6 +119,8 @@ func (b *Board) PlayPawnMove(color string, startFile string, endRank string, end
 			b.GetPieceInSquare(&m.start).Has(White) == isWhite &&
 			(endFile == "" || m.end.file == FileToIdx(endFile)) {
 
+			b.MovePieces(&m)
+
 			b.enPassantSquare = nil
 			upOrDown := +1
 			if !isWhite {
@@ -128,9 +135,8 @@ func (b *Board) PlayPawnMove(color string, startFile string, endRank string, end
 				}
 				b.board[m.end.rank][m.end.file] = newPiece
 			}
-			b.board[m.end.rank][m.end.file].Set(Moved)
 
-			b.MovePieces(&m)
+			b.board[m.end.rank][m.end.file].Set(Moved)
 			return true
 		}
 	}
@@ -217,7 +223,7 @@ func (b *Board) PlayUciMove(color string, endRank string, endFile string, startR
 
 	// Mossa pedone
 	if b.GetPieceInSquare(&start).Has(Pawn) {
-		if end.rank == 7 {
+		if end.rank == 7 || end.rank == 0 {
 			return b.PlayPawnMove(color, startFile, endRank, endFile, "Q")
 		} else {
 			return b.PlayPawnMove(color, startFile, endRank, endFile, "")
@@ -239,6 +245,20 @@ func (b *Board) PlayUciMove(color string, endRank string, endFile string, startR
 	}
 
 	return false
+}
+
+func (b *Board) playRandomMove(color string) bool {
+	isWhite := color == "white"
+
+	random := rand.Intn(len(b.possibleMoves[isWhite]))
+	randomMove := b.possibleMoves[isWhite][random]
+
+	startRank := randomMove.start.String()[1:2]
+	startFile := randomMove.start.String()[0:1]
+	endRank := randomMove.end.String()[1:2]
+	endFile := randomMove.end.String()[0:1]
+
+	return b.PlayUciMove(color, endRank, endFile, startRank, startFile)
 }
 
 func (b *Board) LoadFEN(fen string) {
@@ -464,7 +484,7 @@ func (h *Board) UpdatePossibleMoves() {
 							shouldRook := h.GetPieceInSquare(&path[0])
 							if !(shouldRook.Has(Rook) && shouldRook.Has(White) == isWhite) {
 								h.castling = h.castling &^ (castlingType | castlingColor)
-								break
+								continue
 							}
 
 							canCastle := true
@@ -568,20 +588,6 @@ func (b *Board) Print() {
 			t := " ·"
 			if piece.Has(White) {
 				if piece.Has(King) {
-					t = " ♔"
-				} else if piece.Has(Queen) {
-					t = " ♕"
-				} else if piece.Has(Bishop) {
-					t = " ♗"
-				} else if piece.Has(Knight) {
-					t = " ♘"
-				} else if piece.Has(Rook) {
-					t = " ♖"
-				} else if piece.Has(Pawn) {
-					t = " ♙"
-				}
-			} else {
-				if piece.Has(King) {
 					t = " ♚"
 				} else if piece.Has(Queen) {
 					t = " ♛"
@@ -593,6 +599,20 @@ func (b *Board) Print() {
 					t = " ♜"
 				} else if piece.Has(Pawn) {
 					t = " ♟︎"
+				}
+			} else {
+				if piece.Has(King) {
+					t = " ♔"
+				} else if piece.Has(Queen) {
+					t = " ♕"
+				} else if piece.Has(Bishop) {
+					t = " ♗"
+				} else if piece.Has(Knight) {
+					t = " ♘"
+				} else if piece.Has(Rook) {
+					t = " ♖"
+				} else if piece.Has(Pawn) {
+					t = " ♙"
 				}
 			}
 			fmt.Print(t)

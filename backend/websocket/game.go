@@ -119,11 +119,14 @@ func (g *Game) Game() {
 
 func (g *Game) updateTimers() {
 	otherPlayer := (g.playerToMove + 1) % 2
+
 	g.Players[g.playerToMove].Timer.Stop()
 	g.Players[otherPlayer].Timer.Reset(g.Players[otherPlayer].RemainingTime)
+
 	if !g.lastMoveTime.IsZero() {
 		g.Players[g.playerToMove].RemainingTime -= time.Since(g.lastMoveTime)
 	}
+
 	g.lastMoveTime = time.Now()
 }
 

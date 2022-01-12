@@ -109,11 +109,11 @@ namespace engine {
     }
 
     Bitboard Bitboard::Intersect(Bitboard b) {
-        return bitboard & b.bitboard;
+        return Bitboard(bitboard & b.bitboard);
     }
     
     Bitboard Bitboard::Invert(Bitboard b) {
-        return bitboard ^ b.bitboard;
+        return Bitboard(bitboard ^ b.bitboard);
     }
 
     std::string Bitboard::ToString() {

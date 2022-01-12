@@ -24,10 +24,10 @@ void Handler::onRequest(const Http::Request& request, Http::ResponseWriter respo
         std::string fen = data["fen"].GetString();
 
         engine::Position position(fen);
-        engine::Move move = engine::Explorer().Search(position, 1e5, 1000);
+        engine::Move move = engine::Explorer().Search(position, 1e6, 1000);
 
         std::string uciMove = position.MoveToString(move);
-        std::cout << "MOSSA TROVATA: " << uciMove << std::endl;
+        std::cout << "Mossa trovata: " << uciMove << std::endl;
 
         response.send(Http::Code::Ok, uciMove);
     } else {

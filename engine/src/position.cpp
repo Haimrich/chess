@@ -17,7 +17,6 @@
 namespace engine {
 
 Position::Position(std::string fen) : enPassantSquare(0), score(0) {
-    score = 0;
 
     std::unordered_map<char, Piece> charToPiece = {
         {'K', Piece::KING},
@@ -92,16 +91,14 @@ Position::Position(std::string fen) : enPassantSquare(0), score(0) {
 
 
     // Flip se non è il turno del bianco
-    if (playerToMove.compare("w") == 0) {
-		// TODO
-	} else {
+    if (playerToMove.compare("b") == 0) {
 		std::swap(bitboards[WHITE], bitboards[BLACK]);
+        for (size_t s = 0; s < SIDES; s++)
+            for (size_t p = 0; p < PIECES; p++)
+                bitboards[s][p].Flip();
+
         std::swap(castlingRights[WHITE], castlingRights[BLACK]);
         enPassantSquare.Flip();
-
-        for (auto& bs : bitboards)
-            for (auto& b : bs)
-                b.Flip();
 
         score = -score;
 	}
@@ -151,7 +148,7 @@ std::vector<Move> Position::GetMoves() {
         for (auto m : possibleMoves)
             moves.emplace_back(m, KING);
 
-        // Castling
+        // Castling - TODO qua ci sarà qualche prob visto che non arrocca mai
         if (castlingRights[WHITE][KING_CASTLING] && !squareInCheck(bitboards[WHITE][KING])) 
         {
             Bitboard kCastlingPathMask(0b01100000ULL);
@@ -308,13 +305,13 @@ Position Position::Flip() {
     Position np = *this;
     
     std::swap(np.bitboards[WHITE], np.bitboards[BLACK]);
+    for (size_t s = 0; s < SIDES; s++)
+        for (size_t p = 0; p < PIECES; p++)
+            np.bitboards[s][p].Flip();
+
     std::swap(np.castlingRights[WHITE], np.castlingRights[BLACK]);
 
     np.enPassantSquare.Flip();
-
-    for (auto& bs : np.bitboards)
-        for (auto& b : bs)
-            b.Flip();
 
     np.score = -score;
 
@@ -329,7 +326,7 @@ int Position::Evaluate(Move m) {
     Tables& tables = Tables::Instance();
     int newScore = tables.GetPieceValue(m.piece, endPiece) - tables.GetPieceValue(m.piece, startPiece); 
 
-    // Se cattura aggiungi pure valore del pezzo catturato
+    // Se cattura aggiungi pure valore del pezzo catturato dal punto di vista dell'avversario
     for (size_t p = 0; p < PIECES; p++)
         if (bitboards[BLACK][p].Has(endPiece)) {
             Bitboard flippedEndPiece = endPiece;
@@ -369,13 +366,17 @@ Position Position::MakeMove(Move m) {
 
     Position np = *this;
     np.enPassantSquare = Bitboard(0);
-	np.score = score + Evaluate(m);
+	np.score += np.Evaluate(m);
 
-    for (size_t p = 0; p < PIECES; p++)
+    for (size_t p = 0; p < PIECES; p++) {    
+        // Eventuali catture
+        for (size_t s = 0; s < SIDES; s++)
+            np.bitboards[s][p].Clear(m.bitboard);
+
+        // Sposta il pezzo
         if (p == m.piece)
-            np.bitboards[WHITE][p] = np.bitboards[WHITE][p].Invert(m.bitboard);
-        else 
-            np.bitboards[WHITE][p].Clear(m.bitboard);
+            np.bitboards[WHITE][p] = np.bitboards[WHITE][p].Invert(endPiece);
+    }
     
     if (startPiece.Has(0b00000001ULL)) // Torre lato regina mossa
         np.castlingRights[WHITE][QUEEN_CASTLING] = false;
@@ -438,7 +439,7 @@ Position& Position::operator=(const Position& p) {
 
 std::ostream& operator<< (std::ostream& os, const Position& p) {
     os << "POSITION - Hash: " << PositionHash()(p) << std::endl;
-    std::string pieceToSymbol[] = {" ♔", " ♕", " ♖", " ♗", " ♘", " ♙", " ♚", " ♛", " ♜", " ♝", " ♞", " ♟︎"};
+    std::string pieceToSymbol[] = {" ♚", " ♛", " ♜", " ♝", " ♞", " ♟︎", " ♔", " ♕", " ♖", " ♗", " ♘", " ♙"};
 
     for (int rank = 7; rank >= 0; rank--) {
         for (int file = 0; file < 8; file++) {
