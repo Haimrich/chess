@@ -34,9 +34,12 @@ namespace Client.Logic
         int HalfmoveClock;
         int FullmoveClock;
 
-        public Game(Side playingSide, User opponent, int time) {
+        private string gameId;
+
+        public Game(Side playingSide, User opponent, int time, string gameId) {
             _board = new Board("[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1]");
 
+            this.gameId = gameId;
             SelectedPiece = null;
 
             PossibleMoves = new List<Move>();
@@ -91,7 +94,7 @@ namespace Client.Logic
             }
 
             string notation = m.GenerateNotation(_board);
-            await Application.Instance.SendMove(notation);
+            await Application.Instance.SendMove(notation, gameId);
         }
 
         public async Task ChoosePromotion(string type)

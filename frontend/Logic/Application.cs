@@ -185,6 +185,7 @@ namespace Client.Logic
                             HandleChallengeRequest(jsonData["content"]["message"].GetValue<string>(), jsonData["content"]["uid"].GetValue<string>());
                             break;
                         case "game-start":
+                            if (game is not null) continue;
                             await HandleGameStart(
                                 jsonData["content"]["opponent"].GetValue<string>(),
                                 jsonData["content"]["game-id"].GetValue<string>(),
@@ -336,11 +337,11 @@ namespace Client.Logic
                 User user = new User();
                 user.Username = "Computer";
                 user.Elo = 2000;
-                game = new Game(color == "white" ? Side.White : Side.Black, user, time);
+                game = new Game(color == "white" ? Side.White : Side.Black, user, time, gameId);
             }
             else
             {
-                game = new Game(color == "white" ? Side.White : Side.Black, await GetUserData(opponentUid), time);
+                game = new Game(color == "white" ? Side.White : Side.Black, await GetUserData(opponentUid), time, gameId);
             }
 
             ChangePanel("game");
@@ -365,10 +366,11 @@ namespace Client.Logic
             return user;
         }
 
-        public async Task SendMove(string move)
+        public async Task SendMove(string move, string gameId)
         {
             var content = new JsonObject();
             content.Add("move", move);
+            content.Add("game-id", gameId);
             var jsonData = new JsonObject();
             jsonData.Add("type", "play-move");
             jsonData.Add("content", content);

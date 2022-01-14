@@ -1,6 +1,94 @@
 version: '3.8'
 
 services:
+  frontend:
+    container_name: chess_frontend
+    image: chess_frontend
+    build: ./frontend
+    depends_on:
+      - backend
+      - wsnode
+    ports:
+      - 80:80
+    volumes:
+      - ./frontend/nginx.kafka.conf:/etc/nginx/nginx.conf:ro
+
+  backend:
+    container_name: chess_backend
+    image: chess_backend
+    build: ./backend
+    depends_on:
+      - mongodb
+      - engine
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/chess
+      ENGINE_ENDPOINT: http://engine:9080
+    ports:
+      - 8080:8080
+
+  engine:
+    container_name: chess_engine
+    image: chess_engine
+    build: 
+      context: ./engine
+      dockerfile: Dockerfile
+
+  mongodb:
+    container_name: chess_mongodb
+    image: mongo:latest
+    volumes:
+      - chess_mongodb:/data/db
+    logging:
+      driver: none
+
+  game_1:   
+    container_name: kafka_game_1
+    image: chess_game
+    build: ./game
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_GAME_INSTANCE_ID: game_1
+      KAFKA_GAME_GROUP_ID: game
+      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+      KAFKA_CHALLENGE_TOPIC: challenge
+      KAFKA_GAME_TOPIC: game
+      MONGODB_URI: mongodb://mongodb:27017/chess
+      ENGINE_ENDPOINT: http://engine:9080
+    restart: "always"
+    
+  game:   
+    container_name: kafka_game
+    image: chess_game
+    build: ./game
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_GAME_INSTANCE_ID: game_0
+      KAFKA_GAME_GROUP_ID: game
+      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+      KAFKA_CHALLENGE_TOPIC: challenge
+      KAFKA_GAME_TOPIC: game
+      MONGODB_URI: mongodb://mongodb:27017/chess
+      ENGINE_ENDPOINT: http://engine:9080
+    restart: "always"
+
+  challenge:   
+    container_name: kafka_challenge
+    image: chess_challenge
+    build: ./challenge
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_CHALLENGE_INSTANCE_ID: challenge
+      KAFKA_CHALLENGE_GROUP_ID: challenge
+      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+      KAFKA_CHALLENGE_TOPIC: challenge
+      KAFKA_GAME_TOPIC: game
+    restart: "always"
 
   dispatcher_1:
     container_name: kafka_dispatcher_1
@@ -10,7 +98,7 @@ services:
       - kafka
     environment:
       KAFKA_ADDRESS: kafka:9092
-      KAFKA_DISPATCHER_INSTANCE_ID: dispatcher1
+      KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_1
       KAFKA_DISPATCHER_GROUP_ID: dispatcher
       KAFKA_INBOUND_TOPIC: websocket.inbound
       KAFKA_CHALLENGE_TOPIC: challenge
@@ -25,7 +113,7 @@ services:
       - kafka
     environment:
       KAFKA_ADDRESS: kafka:9092
-      KAFKA_DISPATCHER_INSTANCE_ID: dispatcher0
+      KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_0
       KAFKA_DISPATCHER_GROUP_ID: dispatcher
       KAFKA_INBOUND_TOPIC: websocket.inbound
       KAFKA_CHALLENGE_TOPIC: challenge
@@ -93,14 +181,15 @@ services:
     volumes:
       - chess_kafka_data:/var/lib/kafka/data
       - chess_kafka_log:/var/lib/kafka/log
-    #logging:
-    #  driver: none
+    logging:
+      driver: none
+    restart: always
 
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
     ports:
-      - "8080:8080"
+      - "8083:8080"
     restart: always
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
@@ -118,3 +207,4 @@ volumes:
   chess_zookeeper_log:
   chess_kafka_data:
   chess_kafka_log:
+  chess_mongodb:

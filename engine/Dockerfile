@@ -3,7 +3,7 @@
 FROM ubuntu:focal as pistache-env
 
 ENV DEBIAN_FRONTEND=noninteractive 
-RUN apt-get update && apt-get install -y software-properties-common
+RUN apt-get update -y && apt-get install -y software-properties-common
 RUN add-apt-repository ppa:pistache+team/unstable
 RUN apt update
 RUN apt install -y libpistache-dev

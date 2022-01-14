@@ -22,6 +22,8 @@ services:
     environment:
         MONGODB_URI: mongodb://mongodb:27017/chess
         ENGINE_ENDPOINT: http://engine:9080
+    ports:
+      - 8080:8080
 
   engine:
     container_name: chess_engine

@@ -28,8 +28,6 @@ func main() {
 	config.Metadata.AllowAutoTopicCreation = true
 	config.Producer.RequiredAcks = sarama.WaitForAll
 
-	// Create new consumer
-	//consumer, err := sarama.NewConsumer(strings.Split(KAFKA_ADDRESS, ","), config)
 	group, err := sarama.NewConsumerGroup(strings.Split(KAFKA_ADDRESS, ","), KAFKA_DISPATCHER_GROUP_ID, config)
 	if err != nil {
 		log.Fatalf("ERRORE: Kafka cluster non raggiungibile\n%s\n", err.Error())
@@ -42,84 +40,8 @@ func main() {
 		}
 	}()
 
-	//kafkaConsumer, _ := consumer.ConsumePartition(KAFKA_INBOUND_TOPIC, 0, sarama.OffsetNewest)
-
 	kafkaProducer, _ := sarama.NewAsyncProducer(strings.Split(KAFKA_ADDRESS, ","), config)
-	/*
-		for {
-			ev := <-kafkaConsumer.Messages()
 
-			fmt.Printf("[DISPATCHER] WS -> Dispatcher: %s\n", string(ev.Value))
-
-			var message InboundMessage
-			if err := json.Unmarshal(ev.Value, &message); err != nil {
-				fmt.Printf("[DISPATCHER] Invalid Message.\n")
-				continue
-			}
-
-			switch message.MessageType {
-			case "play-move":
-				gameId, _ := message.Content["game-id"].(string)
-				move, _ := message.Content["move"].(string)
-
-				md, _ := json.Marshal(MoveMessage{
-					UID:    message.UID,
-					GameId: gameId,
-					Move:   move,
-				})
-				kafkaMessage := sarama.ProducerMessage{
-					Topic: KAFKA_MESSAGES_GAME_TOPIC,
-					Key:   sarama.StringEncoder(gameId),
-					Value: sarama.ByteEncoder(md),
-				}
-				kafkaProducer.Input() <- &kafkaMessage
-
-			case "challenge-request":
-				if uid, ok := message.Content["uid"].(string); ok {
-					md, _ := json.Marshal(ChallengeMessage{
-						Type: "request",
-						From: message.UID,
-						To:   uid,
-					})
-					kafkaMessage := sarama.ProducerMessage{
-						Topic: KAFKA_MESSAGES_CHALLENGE_TOPIC,
-						Key:   sarama.StringEncoder(message.UID),
-						Value: sarama.ByteEncoder(md),
-					}
-					kafkaProducer.Input() <- &kafkaMessage
-				}
-
-			case "challenge-accept":
-				if uid, ok := message.Content["uid"].(string); ok {
-					md, _ := json.Marshal(ChallengeMessage{
-						Type: "accept",
-						From: uid,
-						To:   message.UID,
-					})
-					kafkaMessage := sarama.ProducerMessage{
-						Topic: KAFKA_MESSAGES_CHALLENGE_TOPIC,
-						Key:   sarama.StringEncoder(message.UID),
-						Value: sarama.ByteEncoder(md),
-					}
-					kafkaProducer.Input() <- &kafkaMessage
-				}
-
-			case "challenge-computer":
-				md, _ := json.Marshal(ChallengeMessage{
-					Type: "computer",
-					From: message.UID,
-					To:   "computer",
-				})
-				kafkaMessage := sarama.ProducerMessage{
-					Topic: KAFKA_MESSAGES_CHALLENGE_TOPIC,
-					Key:   sarama.StringEncoder(message.UID),
-					Value: sarama.ByteEncoder(md),
-				}
-				kafkaProducer.Input() <- &kafkaMessage
-
-			}
-		}
-	*/
 	ctx := context.Background()
 	for {
 		topics := []string{KAFKA_INBOUND_TOPIC}
@@ -209,7 +131,7 @@ func (h ConsumerGroupHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, cla
 				})
 				kafkaMessage := sarama.ProducerMessage{
 					Topic: KAFKA_CHALLENGE_TOPIC,
-					Key:   sarama.StringEncoder(message.UID),
+					Key:   sarama.StringEncoder(uid),
 					Value: sarama.ByteEncoder(md),
 				}
 				h.kafkaProducer.Input() <- &kafkaMessage
