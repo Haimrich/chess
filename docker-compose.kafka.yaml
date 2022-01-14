@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+
+  dispatcher_1:
+    container_name: kafka_dispatcher_1
+    image: chess_dispatcher
+    build: ./dispatcher
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_DISPATCHER_INSTANCE_ID: dispatcher1
+      KAFKA_DISPATCHER_GROUP_ID: dispatcher
+      KAFKA_INBOUND_TOPIC: websocket.inbound
+      KAFKA_CHALLENGE_TOPIC: challenge
+      KAFKA_GAME_TOPIC: game
+    restart: "always"
+
+  dispatcher:
+    container_name: kafka_dispatcher_0
+    image: chess_dispatcher
+    build: ./dispatcher
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_DISPATCHER_INSTANCE_ID: dispatcher0
+      KAFKA_DISPATCHER_GROUP_ID: dispatcher
+      KAFKA_INBOUND_TOPIC: websocket.inbound
+      KAFKA_CHALLENGE_TOPIC: challenge
+      KAFKA_GAME_TOPIC: game
+    restart: "always"
+
+  wsnode_1:
+    container_name: kafka_wsnode_1
+    image: chess_wsnode
+    build: ./wsnode
+    ports:
+      - 8082:8081
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_WSNODE_INSTANCE_ID: wsnode2
+      KAFKA_INBOUND_TOPIC: websocket.inbound
+      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+    restart: "always"
+
+  wsnode:
+    container_name: kafka_wsnode
+    image: chess_wsnode
+    build: ./wsnode
+    ports:
+      - 8081:8081
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_ADDRESS: kafka:9092
+      KAFKA_WSNODE_INSTANCE_ID: wsnode1
+      KAFKA_INBOUND_TOPIC: websocket.inbound
+      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+    restart: "always"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    volumes:
+      - chess_zookeeper_data:/var/lib/zookeeper/data
+      - chess_zookeeper_log:/var/lib/zookeeper/log
+    logging:
+      driver: none
+
+  
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - chess_kafka_data:/var/lib/kafka/data
+      - chess_kafka_log:/var/lib/kafka/log
+    #logging:
+    #  driver: none
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    logging:
+      driver: none
+
+  force-attach:
+    image: bash
+    command: tail -f /dev/null
+
+volumes:
+  chess_zookeeper_data:
+  chess_zookeeper_log:
+  chess_kafka_data:
+  chess_kafka_log:
