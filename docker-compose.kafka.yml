@@ -1,37 +1,56 @@
 version: '3.8'
 
+# ===== KAFKA GLOBAL ENV ====== #
+
+x-global-kafka: &global-kafka
+  KAFKA_ADDRESS: kafka:9092
+  KAFKA_OUTBOUND_TOPIC: websocket.outbound
+  KAFKA_INBOUND_TOPIC: websocket.inbound
+  KAFKA_GAME_TOPIC: game
+  KAFKA_CHALLENGE_TOPIC: challenge
+  KAFKA_GAME_GROUP_ID: game
+  KAFKA_CHALLENGE_GROUP_ID: challenge
+  KAFKA_DISPATCHER_GROUP_ID: dispatcher
+
+# ===== VOLUMES ====== #
+
+volumes:
+  chess_zookeeper_data:
+  chess_zookeeper_log:
+  chess_kafka_data:
+  chess_kafka_log:
+  chess_mongodb:
+
+# ===== SERVICES ====== #
+
 services:
+
+  # ===== FRONTEND ====== #
+
   frontend:
     container_name: chess_frontend
     image: chess_frontend
     build: ./frontend
     depends_on:
-      - backend
-      - wsnode
+      - wsnode_0
+      - user 
     ports:
       - 80:80
     volumes:
       - ./frontend/nginx.kafka.conf:/etc/nginx/nginx.conf:ro
+    restart: always
 
-  backend:
-    container_name: chess_backend
-    image: chess_backend
-    build: ./backend
+  # ===== USER SERVICE ====== #
+
+  user:
+    container_name: chess_user
+    image: chess_user
+    build: ./user
     depends_on:
       - mongodb
       - engine
     environment:
       MONGODB_URI: mongodb://mongodb:27017/chess
-      ENGINE_ENDPOINT: http://engine:9080
-    ports:
-      - 8080:8080
-
-  engine:
-    container_name: chess_engine
-    image: chess_engine
-    build: 
-      context: ./engine
-      dockerfile: Dockerfile
 
   mongodb:
     container_name: chess_mongodb
@@ -40,88 +59,85 @@ services:
       - chess_mongodb:/data/db
     logging:
       driver: none
+    
+  # ===== ENGINE ====== #
+
+  engine:
+    container_name: chess_engine
+    image: chess_engine
+    build: 
+      context: ./engine
+      dockerfile: Dockerfile
+
+  # ===== GAME SERVICES ====== #
 
   game_1:   
-    container_name: kafka_game_1
+    container_name: chess_game_1
     image: chess_game
     build: ./game
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
+      <<: *global-kafka
       KAFKA_GAME_INSTANCE_ID: game_1
-      KAFKA_GAME_GROUP_ID: game
-      KAFKA_OUTBOUND_TOPIC: websocket.outbound
-      KAFKA_CHALLENGE_TOPIC: challenge
-      KAFKA_GAME_TOPIC: game
       MONGODB_URI: mongodb://mongodb:27017/chess
       ENGINE_ENDPOINT: http://engine:9080
     restart: "always"
     
-  game:   
-    container_name: kafka_game
+  game_0:   
+    container_name: chess_game_0
     image: chess_game
     build: ./game
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
+      <<: *global-kafka
       KAFKA_GAME_INSTANCE_ID: game_0
-      KAFKA_GAME_GROUP_ID: game
-      KAFKA_OUTBOUND_TOPIC: websocket.outbound
-      KAFKA_CHALLENGE_TOPIC: challenge
-      KAFKA_GAME_TOPIC: game
       MONGODB_URI: mongodb://mongodb:27017/chess
       ENGINE_ENDPOINT: http://engine:9080
     restart: "always"
 
+  # ===== CHALLENGE SERVICE ====== #
+
   challenge:   
-    container_name: kafka_challenge
+    container_name: chess_challenge
     image: chess_challenge
     build: ./challenge
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
+      <<: *global-kafka
       KAFKA_CHALLENGE_INSTANCE_ID: challenge
-      KAFKA_CHALLENGE_GROUP_ID: challenge
-      KAFKA_OUTBOUND_TOPIC: websocket.outbound
-      KAFKA_CHALLENGE_TOPIC: challenge
-      KAFKA_GAME_TOPIC: game
     restart: "always"
+
+  # ===== INBOUND MESSAGE DISPATCHERS ====== #
 
   dispatcher_1:
-    container_name: kafka_dispatcher_1
+    container_name: chess_dispatcher_1
     image: chess_dispatcher
     build: ./dispatcher
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
+      <<: *global-kafka
       KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_1
-      KAFKA_DISPATCHER_GROUP_ID: dispatcher
-      KAFKA_INBOUND_TOPIC: websocket.inbound
-      KAFKA_CHALLENGE_TOPIC: challenge
-      KAFKA_GAME_TOPIC: game
     restart: "always"
 
-  dispatcher:
-    container_name: kafka_dispatcher_0
+  dispatcher_0:
+    container_name: chess_dispatcher_0
     image: chess_dispatcher
     build: ./dispatcher
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
+      <<: *global-kafka
       KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_0
-      KAFKA_DISPATCHER_GROUP_ID: dispatcher
-      KAFKA_INBOUND_TOPIC: websocket.inbound
-      KAFKA_CHALLENGE_TOPIC: challenge
-      KAFKA_GAME_TOPIC: game
     restart: "always"
+
+  # ===== WEBSOCKET NODES ====== #
 
   wsnode_1:
-    container_name: kafka_wsnode_1
+    container_name: chess_wsnode_1
     image: chess_wsnode
     build: ./wsnode
     ports:
@@ -129,14 +145,12 @@ services:
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
-      KAFKA_WSNODE_INSTANCE_ID: wsnode2
-      KAFKA_INBOUND_TOPIC: websocket.inbound
-      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+      <<: *global-kafka
+      KAFKA_WSNODE_INSTANCE_ID: wsnode_1
     restart: "always"
 
-  wsnode:
-    container_name: kafka_wsnode
+  wsnode_0:
+    container_name: chess_wsnode_0
     image: chess_wsnode
     build: ./wsnode
     ports:
@@ -144,11 +158,16 @@ services:
     depends_on:
       - kafka
     environment:
-      KAFKA_ADDRESS: kafka:9092
-      KAFKA_WSNODE_INSTANCE_ID: wsnode1
-      KAFKA_INBOUND_TOPIC: websocket.inbound
-      KAFKA_OUTBOUND_TOPIC: websocket.outbound
+      <<: *global-kafka
+      KAFKA_WSNODE_INSTANCE_ID: wsnode_0
     restart: "always"
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8081"]
+        interval: 3s
+        timeout: 10s
+        retries: 20
+
+  # ===== KAFKA ====== #
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -198,13 +217,36 @@ services:
     logging:
       driver: none
 
-  force-attach:
-    image: bash
-    command: tail -f /dev/null
+  # ===== MONITORING ====== #
 
-volumes:
-  chess_zookeeper_data:
-  chess_zookeeper_log:
-  chess_kafka_data:
-  chess_kafka_log:
-  chess_mongodb:
+  prometheus:
+    image: prom/prometheus:latest
+    user: root
+    container_name: prometheus
+    ports:
+    - 9090:9090
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+    - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+    - cadvisor
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+    - 8180:8080
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:rw
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    command:
+    - '--enable_load_reader=true'
+    depends_on:
+    - engine
+    - kafka
+    - user
+    - wsnode_0
+

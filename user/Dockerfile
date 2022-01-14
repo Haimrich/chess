@@ -1,0 +1,10 @@
+FROM golang:1.17 AS build-env
+WORKDIR /go/src/app
+ADD . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o user
+
+FROM alpine
+WORKDIR /app
+COPY --from=build-env /go/src/app/user .
+EXPOSE 8080
+ENTRYPOINT ./user
