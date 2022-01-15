@@ -7,4 +7,6 @@ FROM alpine
 WORKDIR /app
 COPY --from=build-env /go/src/app/user .
 EXPOSE 8080
+EXPOSE 8070
+EXPOSE 2112
 ENTRYPOINT ./user

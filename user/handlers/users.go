@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"time"
 	"user/db"
 	"user/models"
 
@@ -79,4 +80,101 @@ func (h *Handler) OnlineUsers(c *gin.Context) {
 		"success": true,
 		"data":    results,
 	})
+}
+
+type UpdateStatusForm struct {
+	Uid    string `json:"uid" form:"uid" binding:"required"`
+	Status string `json:"status" form:"status" binding:"required"`
+}
+
+func (h *Handler) UpdateUserStatus(c *gin.Context) {
+	var statusData UpdateStatusForm
+	if err := c.ShouldBind(&statusData); err == nil {
+		id, _ := primitive.ObjectIDFromHex(statusData.Uid)
+		filter := bson.M{"_id": id}
+
+		var update bson.D
+		if statusData.Status == "offline" {
+			update = bson.D{
+				{
+					Key: "$set", Value: bson.D{
+						{Key: "status", Value: statusData.Status},
+						{Key: "last-seen", Value: time.Now()},
+					},
+				}}
+		} else if statusData.Status == "online" {
+			update = bson.D{
+				{
+					Key: "$set", Value: bson.D{
+						{Key: "status", Value: statusData.Status},
+					}},
+			}
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Stato utente non valido.",
+			})
+			return
+		}
+
+		user := &models.User{}
+		err := h.DB.Collection(db.UsersCollectionName).FindOneAndUpdate(context.TODO(), filter, update).Decode(user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    user,
+		})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+}
+
+type UpdateCurrentGameForm struct {
+	Uid           string `json:"uid" form:"uid" binding:"required"`
+	CurrentGameId string `json:"current-game-id" form:"current-game-id" binding:"required"`
+}
+
+func (h *Handler) UpdateCurrentGame(c *gin.Context) {
+	var gameData UpdateCurrentGameForm
+	if err := c.ShouldBind(&gameData); err == nil {
+		id, _ := primitive.ObjectIDFromHex(gameData.Uid)
+		filter := bson.M{"_id": id}
+
+		update := bson.D{{
+			Key: "$set", Value: bson.D{
+				{Key: "current-game-id", Value: gameData.CurrentGameId},
+			}},
+		}
+
+		user := &models.User{}
+		err := h.DB.Collection(db.UsersCollectionName).FindOneAndUpdate(context.TODO(), filter, update).Decode(user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    user,
+		})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
 }

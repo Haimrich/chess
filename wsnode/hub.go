@@ -116,10 +116,12 @@ func (h *Hub) Unregister(c *Client) {
 	c.conn.Close()
 }
 
+/*
 type Heartbeat struct {
 	NodeId    string `json:"node-id"`
 	Partition int    `json:"partition"`
 }
+*/
 
 func (h *Hub) KafkaMessageConsumer() {
 	for {

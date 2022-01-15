@@ -43,6 +43,9 @@ func (c *Client) Reader() {
 		return nil
 	})
 
+	connectMessage := Message{UID: c.uid, MessageType: "connect"}
+	c.SendKafkaMessage(connectMessage)
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -56,17 +59,13 @@ func (c *Client) Reader() {
 		if err := json.Unmarshal(message, &m); err == nil {
 			// Scrivi messaggio su kafka
 			m.UID = c.uid
-			md, _ := json.Marshal(m)
-
-			kafkaMessage := sarama.ProducerMessage{
-				Topic: KAFKA_INBOUND_TOPIC,
-				Key:   nil,
-				Value: sarama.ByteEncoder(md),
-			}
-			c.hub.kafkaProducer.Input() <- &kafkaMessage
+			c.SendKafkaMessage(m)
 			fmt.Println("Messaggio inbound inviato.")
 		}
 	}
+
+	disconnectMessage := Message{UID: c.uid, MessageType: "disconnect"}
+	c.SendKafkaMessage(disconnectMessage)
 }
 
 // Invia ai client
@@ -98,4 +97,19 @@ func (c *Client) Writer() {
 			}
 		}
 	}
+}
+
+func (c *Client) SendKafkaMessage(data interface{}) {
+	md, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("[WSNODE] Marshalling error while sending in Kafka: %v\n", err)
+		return
+	}
+
+	kafkaMessage := sarama.ProducerMessage{
+		Topic: KAFKA_INBOUND_TOPIC,
+		Key:   nil,
+		Value: sarama.ByteEncoder(md),
+	}
+	c.hub.kafkaProducer.Input() <- &kafkaMessage
 }

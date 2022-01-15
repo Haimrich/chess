@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -20,6 +23,8 @@ var KAFKA_INBOUND_TOPIC = os.Getenv("KAFKA_INBOUND_TOPIC")
 
 var KAFKA_CHALLENGE_TOPIC = os.Getenv("KAFKA_CHALLENGE_TOPIC")
 var KAFKA_GAME_TOPIC = os.Getenv("KAFKA_GAME_TOPIC")
+
+var USER_SERVICE_ADDRESS = os.Getenv("USER_SERVICE_ADDRESS")
 
 func main() {
 	config := sarama.NewConfig()
@@ -91,67 +96,83 @@ func (h ConsumerGroupHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, cla
 		}
 
 		switch message.MessageType {
+
 		case "play-move":
 			gameId, _ := message.Content["game-id"].(string)
 			move, _ := message.Content["move"].(string)
 
-			md, _ := json.Marshal(MoveMessage{
+			m := MoveMessage{
 				UID:    message.UID,
 				GameId: gameId,
 				Move:   move,
-			})
-			kafkaMessage := sarama.ProducerMessage{
-				Topic: KAFKA_GAME_TOPIC,
-				Key:   sarama.StringEncoder(gameId),
-				Value: sarama.ByteEncoder(md),
 			}
-			h.kafkaProducer.Input() <- &kafkaMessage
+			h.SendKafkaMessage(KAFKA_GAME_TOPIC, gameId, m)
 
 		case "challenge-request":
 			if uid, ok := message.Content["uid"].(string); ok {
-				md, _ := json.Marshal(ChallengeMessage{
+				m := ChallengeMessage{
 					Type: "request",
 					From: message.UID,
 					To:   uid,
-				})
-				kafkaMessage := sarama.ProducerMessage{
-					Topic: KAFKA_CHALLENGE_TOPIC,
-					Key:   sarama.StringEncoder(message.UID),
-					Value: sarama.ByteEncoder(md),
 				}
-				h.kafkaProducer.Input() <- &kafkaMessage
+				h.SendKafkaMessage(KAFKA_CHALLENGE_TOPIC, message.UID, m)
 			}
 
 		case "challenge-accept":
 			if uid, ok := message.Content["uid"].(string); ok {
-				md, _ := json.Marshal(ChallengeMessage{
+				m := ChallengeMessage{
 					Type: "accept",
 					From: uid,
 					To:   message.UID,
-				})
-				kafkaMessage := sarama.ProducerMessage{
-					Topic: KAFKA_CHALLENGE_TOPIC,
-					Key:   sarama.StringEncoder(uid),
-					Value: sarama.ByteEncoder(md),
 				}
-				h.kafkaProducer.Input() <- &kafkaMessage
+				h.SendKafkaMessage(KAFKA_CHALLENGE_TOPIC, uid, m)
 			}
 
 		case "challenge-computer":
-			md, _ := json.Marshal(ChallengeMessage{
+			m := ChallengeMessage{
 				Type: "computer",
 				From: message.UID,
 				To:   "computer",
-			})
-			kafkaMessage := sarama.ProducerMessage{
-				Topic: KAFKA_CHALLENGE_TOPIC,
-				Key:   sarama.StringEncoder(message.UID),
-				Value: sarama.ByteEncoder(md),
 			}
-			h.kafkaProducer.Input() <- &kafkaMessage
+			h.SendKafkaMessage(KAFKA_CHALLENGE_TOPIC, message.UID, m)
 
+		case "connect":
+			h.UpdateUserStatus(message.UID, "online")
+		case "disconnect":
+			h.UpdateUserStatus(message.UID, "offline")
 		}
+
 		sess.MarkMessage(msg, "")
 	}
 	return nil
+}
+
+func (h ConsumerGroupHandler) SendKafkaMessage(topic string, key string, data interface{}) {
+	md, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("[DISPATCHER] Marshalling error: %v\n", err)
+		return
+	}
+	kafkaMessage := sarama.ProducerMessage{
+		Topic: topic,
+		Key:   sarama.StringEncoder(key),
+		Value: sarama.ByteEncoder(md),
+	}
+	h.kafkaProducer.Input() <- &kafkaMessage
+}
+
+type StatusUpdateForm struct {
+	UID    string `json:"uid"`
+	Status string `json:"status"`
+}
+
+func (h ConsumerGroupHandler) UpdateUserStatus(uid string, status string) {
+	formData := StatusUpdateForm{UID: uid, Status: status}
+	jsonValue, _ := json.Marshal(formData)
+
+	resp, err := http.Post(USER_SERVICE_ADDRESS+"status", "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil || resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("[DISPATCHER] User service update status error: %v\n%s", err, string(body))
+	}
 }

@@ -7,11 +7,12 @@ import (
 )
 
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"uid"`
-	Username string             `json:"username"`
-	Password string             `json:"-"`
-	Avatar   string             `json:"avatar"`
-	Elo      int                `json:"elo"`
-	Status   string             `json:"status"`
-	LastSeen time.Time          `bson:"last-seen" json:"last-seen"`
+	ID            primitive.ObjectID `bson:"_id,omitempty" json:"uid"`
+	Username      string             `json:"username"`
+	Password      string             `json:"-"`
+	Avatar        string             `json:"avatar"`
+	Elo           int                `json:"elo"`
+	Status        string             `json:"status"`
+	LastSeen      time.Time          `bson:"last-seen" json:"last-seen"`
+	CurrentGameID string             `bson:"current-game-id,omitempty" json:"current-game-id"`
 }

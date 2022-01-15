@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 func main() {
@@ -16,20 +17,35 @@ func main() {
 
 	h := handlers.NewHandler(dbc)
 
-	router := gin.Default()
-	router.Use(cors.Default())
+	metrics := gin.New()
+	p := ginprometheus.NewPrometheus("UserService")
+	p.SetMetricsPath(metrics)
 
-	router.POST("/signup", h.Signup)
-	router.POST("/login", auth.TokenAuthMiddleware(false), h.Login)
-	router.GET("/logout", auth.TokenAuthMiddleware(true), h.Logout)
+	public := gin.Default()
+	public.Use(cors.Default())
+	public.Use(p.HandlerFunc())
 
-	router.GET("/user/username/:username", auth.TokenAuthMiddleware(true), h.UserByUsername)
-	router.GET("/user/id/:uid", auth.TokenAuthMiddleware(true), h.UserById)
+	public.POST("/signup", h.Signup)
+	public.POST("/login", auth.TokenAuthMiddleware(false), h.Login)
+	public.GET("/logout", auth.TokenAuthMiddleware(true), h.Logout)
 
-	router.GET("/users/online", auth.TokenAuthMiddleware(true), h.OnlineUsers)
+	public.GET("/user/username/:username", auth.TokenAuthMiddleware(true), h.UserByUsername)
+	public.GET("/user/id/:uid", auth.TokenAuthMiddleware(true), h.UserById)
 
-	router.GET("/", auth.TokenAuthMiddleware(false), h.Home)
+	public.GET("/users/online", auth.TokenAuthMiddleware(true), h.OnlineUsers)
 
-	router.Static("/avatar", "avatar")
-	log.Fatal(router.Run(":8080"))
+	public.GET("/", auth.TokenAuthMiddleware(false), h.Home)
+
+	public.Static("/avatar", "avatar")
+
+	private := gin.Default()
+	private.Use(cors.Default())
+	private.Use(p.HandlerFunc())
+
+	private.POST("/status", h.UpdateUserStatus)
+	private.POST("/game", h.UpdateCurrentGame)
+
+	go func() { log.Fatal(metrics.Run(":2112")) }()
+	go func() { log.Fatal(private.Run(":8070")) }()
+	log.Fatal(public.Run(":8080"))
 }

@@ -121,6 +121,7 @@ services:
     environment:
       <<: *global-kafka
       KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_1
+      USER_SERVICE_ADDRESS: http://user:8070/
     restart: "always"
 
   dispatcher_0:
@@ -132,6 +133,7 @@ services:
     environment:
       <<: *global-kafka
       KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_0
+      USER_SERVICE_ADDRESS: http://user:8070/
     restart: "always"
 
   # ===== WEBSOCKET NODES ====== #

@@ -4,3 +4,4 @@ scrape_configs:
   static_configs:
   - targets:
     - cadvisor:8080
+    - user:2112
