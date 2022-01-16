@@ -2,14 +2,19 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"game/chess"
+	"game/db"
+	"game/models"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -38,6 +43,7 @@ const timePerPlayer = 10 * time.Minute
 
 // Goroutine che gestisce timer ecc.
 func (g *Game) Game() {
+	go g.addGameToDatabase()
 	for {
 		select {
 		case move := <-g.PlayMove:
@@ -50,6 +56,7 @@ func (g *Game) Game() {
 					return
 				}
 				g.updatePlayerToMove()
+				go g.updateDatabase(move.Move)
 				go g.queryChessEngine()
 			}
 		case <-g.Players[0].Timer.C:
@@ -115,6 +122,62 @@ func (g *Game) checkEndGame() bool {
 	}
 	return false
 
+}
+
+// Database
+
+func (g *Game) addGameToDatabase() {
+	players := []models.Player{
+		{
+			ID:            g.Players[0].ID,
+			Color:         g.Players[0].Color,
+			RemainingTime: g.Players[0].RemainingTime,
+		},
+		{
+			ID:            g.Players[1].ID,
+			Color:         g.Players[1].Color,
+			RemainingTime: g.Players[1].RemainingTime,
+		},
+	}
+
+	gameId, _ := primitive.ObjectIDFromHex(g.ID)
+
+	game := models.Game{
+		ID:              gameId,
+		Players:         players,
+		PlayerToMove:    g.playerToMove,
+		CurrentPosition: g.board.GenerateFEN(g.Players[g.playerToMove].Color),
+	}
+
+	g.h.db.Collection(db.GamesCollectionName).InsertOne(context.TODO(), game)
+}
+
+func (g *Game) updateDatabase(moveNotation string) {
+	gameId, _ := primitive.ObjectIDFromHex(g.ID)
+	filter := bson.M{"_id": gameId}
+
+	fen := g.board.GenerateFEN(g.Players[g.playerToMove].Color)
+
+	move := models.Move{
+		Move:   moveNotation,
+		Time:   time.Now(),
+		Result: fen,
+	}
+
+	update := bson.D{
+		{
+			Key: "$set", Value: bson.D{
+				{Key: "players.0.remaining-time", Value: g.Players[0].RemainingTime},
+				{Key: "players.1.remaining-time", Value: g.Players[1].RemainingTime},
+				{Key: "player-to-move", Value: g.playerToMove},
+				{Key: "current-position", Value: fen},
+			}},
+		{
+			Key: "$push", Value: bson.M{"moves": move},
+		},
+	}
+
+	g.h.db.Collection(db.GamesCollectionName).UpdateOne(context.TODO(), filter, update)
 }
 
 // Interrogazione dell'engine

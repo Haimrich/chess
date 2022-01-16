@@ -19,7 +19,8 @@ volumes:
   chess_zookeeper_log:
   chess_kafka_data:
   chess_kafka_log:
-  chess_mongodb:
+  chess_user_mongodb:
+  chess_game_mongodb:
 
 # ===== SERVICES ====== #
 
@@ -47,16 +48,16 @@ services:
     image: chess_user
     build: ./user
     depends_on:
-      - mongodb
+      - user_mongodb
       - engine
     environment:
-      MONGODB_URI: mongodb://mongodb:27017/chess
+      MONGODB_URI: mongodb://user_mongodb:27017/chess
 
-  mongodb:
-    container_name: chess_mongodb
+  user_mongodb:
+    container_name: chess_user_mongodb
     image: mongo:latest
     volumes:
-      - chess_mongodb:/data/db
+      - chess_user_mongodb:/data/db
     logging:
       driver: none
     
@@ -77,10 +78,11 @@ services:
     build: ./game
     depends_on:
       - kafka
+      - game_mongodb
     environment:
       <<: *global-kafka
       KAFKA_GAME_INSTANCE_ID: game_1
-      MONGODB_URI: mongodb://mongodb:27017/chess
+      MONGODB_URI: mongodb://game_mongodb:27017/chess
       ENGINE_ENDPOINT: http://engine:9080
     restart: "always"
     
@@ -90,12 +92,21 @@ services:
     build: ./game
     depends_on:
       - kafka
+      - game_mongodb
     environment:
       <<: *global-kafka
       KAFKA_GAME_INSTANCE_ID: game_0
-      MONGODB_URI: mongodb://mongodb:27017/chess
+      MONGODB_URI: mongodb://game_mongodb:27017/chess
       ENGINE_ENDPOINT: http://engine:9080
     restart: "always"
+
+  game_mongodb:
+    container_name: chess_game_mongodb
+    image: mongo:latest
+    volumes:
+      - chess_game_mongodb:/data/db
+    logging:
+      driver: none
 
   # ===== CHALLENGE SERVICE ====== #
 

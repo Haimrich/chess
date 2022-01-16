@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"game/chess"
+	"game/db"
+	"game/models"
 	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/Shopify/sarama"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -61,7 +66,7 @@ func (h *Hub) GameStart(gameId string, uidPlayerA string, uidPlayerB string) {
 		Resign:       make(chan string),
 		lastMoveTime: time.Time{},
 		playerToMove: playerToMove,
-		board:        chess.NewBoard(),
+		board:        chess.NewBoard(""),
 		h:            h,
 		db:           h.db,
 	}
@@ -102,6 +107,66 @@ func (h *Hub) Clear() {
 	h.mu.Unlock()
 }
 
-func (h *Hub) CheckAndReloadGame(gameId string) bool {
-	return false
+func (h *Hub) CheckAndReloadGame(gameIdStr string) bool {
+	gameId, _ := primitive.ObjectIDFromHex(gameIdStr)
+	filter := bson.M{"_id": gameId}
+	result := h.db.Collection(db.GamesCollectionName).FindOne(context.TODO(), filter)
+	if result.Err() != nil {
+		return false
+	}
+
+	var gameData models.Game
+	if err := result.Decode(&gameData); err != nil {
+		return false
+	}
+
+	playerA := Player{
+		ID:            gameData.Players[0].ID,
+		Color:         gameData.Players[0].Color,
+		Timer:         time.NewTimer(gameData.Players[0].RemainingTime),
+		RemainingTime: gameData.Players[0].RemainingTime,
+	}
+
+	playerB := Player{
+		ID:            gameData.Players[1].ID,
+		Color:         gameData.Players[1].Color,
+		Timer:         time.NewTimer(gameData.Players[1].RemainingTime),
+		RemainingTime: gameData.Players[1].RemainingTime,
+	}
+
+	if len(gameData.Moves) == 0 {
+		playerA.Timer.Stop()
+		playerB.Timer.Stop()
+	} else if gameData.PlayerToMove == 1 {
+		playerA.Timer.Stop()
+	} else {
+		playerB.Timer.Stop()
+	}
+
+	lastMoveTime := time.Time{}
+	if len(gameData.Moves) == 0 {
+		lastMoveTime = gameData.Moves[len(gameData.Moves)-1].Time
+	}
+
+	game := &Game{
+		ID:           gameIdStr,
+		Players:      [2]Player{playerA, playerB},
+		PlayMove:     make(chan *chess.MoveMessage, 2),
+		Resign:       make(chan string),
+		lastMoveTime: lastMoveTime,
+		playerToMove: gameData.PlayerToMove,
+		board:        chess.NewBoard(gameData.CurrentPosition),
+		h:            h,
+		db:           h.db,
+	}
+	go game.Game()
+	h.AddGame(game)
+
+	h.SendGameStart(gameData.Players[0].ID, gameData.Players[1].ID, gameIdStr, gameData.Players[0].Color, timePerPlayer)
+	h.SendGameStart(gameData.Players[1].ID, gameData.Players[0].ID, gameIdStr, gameData.Players[1].Color, timePerPlayer)
+
+	if gameData.Players[1].ID == "computer" && gameData.Players[1].Color == "white" {
+		go game.queryChessEngine()
+	}
+	return true
 }

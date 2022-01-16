@@ -205,22 +205,6 @@ func (b *Board) PlayUciMove(color string, endRank string, endFile string, startR
 	end := ParseSquare(endFile + endRank)
 	start := ParseSquare(startFile + startRank)
 
-	/*
-		var filteredMoves []Move
-		isWhite := color == "white"
-
-		for _, m := range b.possibleMoves[isWhite] {
-			if m.end.file == end.file && m.end.rank == end.rank &&
-				m.start.file == start.file && m.start.rank == start.rank {
-				filteredMoves = append(filteredMoves, m)
-			}
-		}
-
-		if len(filteredMoves) != 1 {
-			return false
-		}
-	*/
-
 	// Mossa pedone
 	if b.GetPieceInSquare(&start).Has(Pawn) {
 		if end.rank == 7 || end.rank == 0 {
@@ -315,12 +299,15 @@ func (b *Board) LoadFEN(fen string) {
 	b.fullmoveClock, _ = strconv.Atoi(fields[5])
 }
 
-func NewBoard() *Board {
+func NewBoard(fen string) *Board {
 	board := &Board{
 		kingPositions: make(map[bool]Square),
 		possibleMoves: make(map[bool][]Move),
 	}
-	board.LoadFEN("[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1]")
+	if fen == "" {
+		fen = "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1]"
+	}
+	board.LoadFEN(fen)
 	board.UpdatePossibleMoves()
 	board.Print()
 	return board
