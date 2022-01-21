@@ -1,9 +1,9 @@
 ﻿@page "/"
 
-@inject IJSRuntime JSRuntime
-
 @using Client.Logic
-@using System.IO
+
+@inject IJSRuntime JSRuntime
+@inject Application app
 
 <div class="topbar @TobBarCssClass">
 	<div class="top_navbar_inner">
@@ -247,10 +247,8 @@
 
 
 @code {
-
-    Application app = Application.Instance;
-    Game game => Application.Instance.game;
-    Auth auth => Application.Instance.auth;
+    Game game => app.game;
+    Auth auth => app.auth;
 
     bool collapseNavMenu = false;
     string SideBarCssClass => collapseNavMenu ? "collapse" : "";
@@ -270,8 +268,8 @@
 
     protected override void OnInitialized()
     {
-        Application.Instance.updateUI += new Application.UpdateUI(async () => InvokeAsync(StateHasChanged));
-        Application.Instance.audioService = new AudioService(JSRuntime);
+        app.updateUI += new Application.UpdateUI(async () => InvokeAsync(StateHasChanged));
+        app.audioService = new AudioService(JSRuntime);
     }
 
 }

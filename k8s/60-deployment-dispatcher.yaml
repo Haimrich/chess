@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcher-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dispatcher-service
+  template:
+    metadata:
+      labels:
+        app: dispatcher-service
+    spec:
+      containers:
+        - name: dispatcher-service
+          image: chess_dispatcher:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: dispatcher-env
+            - configMapRef:
+                name: kafka-global-env
+          env:          
+          - name: KAFKA_DISPATCHER_INSTANCE_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name

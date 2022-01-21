@@ -583,6 +583,7 @@ input[type=text], input[type=password] {
 	.board .lastmove {
 		background: var(--main-bg);
 		border: 0.3em solid var(--lights);
+		transition: none;
 	}
 
 	.board .destination, .board .capture {

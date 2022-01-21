@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-config
+data:
+  nginx.conf: |
+    events { }
+    http {
+        include mime.types;
+
+        server {
+          listen 80; 
+
+          location / {
+              root /app;
+              index index.html;
+              try_files $uri $uri/ /index.html =404;
+          }
+          
+        }
+    }

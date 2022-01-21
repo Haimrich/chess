@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: chess_user:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+            - containerPort: 8070
+          envFrom:
+            - configMapRef:
+                name: user-env
+            - configMapRef:
+                name: kafka-global-env

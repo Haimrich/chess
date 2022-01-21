@@ -21,7 +21,7 @@ namespace Client.Logic
                 if (_avatar == null || _avatar == "") 
                     return "images/default_user_image.png";
 
-                return Application.SERVER_URL + "/avatar/" + _avatar;
+                return Application.Instance.SERVER_URL + "/avatar/" + _avatar;
             }
             set => _avatar = value;
         }

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: challenge-service
+spec:
+  #replicas: 2
+  selector:
+    matchLabels:
+      app: challenge-service
+  template:
+    metadata:
+      labels:
+        app: challenge-service
+    spec:
+      containers:
+        - name: challenge-service
+          image: chess_challenge:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: kafka-global-env
+          env:          
+          - name: KAFKA_CHALLENGE_INSTANCE_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name

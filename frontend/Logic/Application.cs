@@ -30,8 +30,8 @@ namespace Client.Logic
     public class Application
     {
         //public const string SERVER_URL = "http://localhost:8080";
-        public const string SERVER_URL = "http://localhost/api";
-        public const string WEBSOCKET_URL = "ws://localhost/ws";
+        public readonly Uri SERVER_URL;
+        public readonly Uri WEBSOCKET_URL;
 
 
         private static Application instance = null;
@@ -42,7 +42,7 @@ namespace Client.Logic
             {
                 if (instance == null)
                 {
-                    instance = new Application();
+                    instance = new Application("");
                 }
                 return instance;
             }
@@ -80,7 +80,7 @@ namespace Client.Logic
 
         public AudioService audioService;
 
-        public Application()
+        public Application(string baseUrl)
         {
             auth = new Auth();
 
@@ -89,6 +89,12 @@ namespace Client.Logic
 
             //httpHandler.CookieContainer = cookies;
             http = new HttpClient(httpHandler);
+            SERVER_URL = new Uri(baseUrl + "api");
+            WEBSOCKET_URL = new UriBuilder(baseUrl + "ws"){
+                Scheme = Uri.UriSchemeWs,
+                Port = SERVER_URL.IsDefaultPort ? -1 : SERVER_URL.Port
+            }.Uri;
+
 
             websocket = new ClientWebSocket();
             //websocket.Options.Cookies = cookies;
@@ -102,6 +108,7 @@ namespace Client.Logic
             };
 
             onlineUsers = new List<User>();
+            instance = this;
         }
 
 
@@ -138,12 +145,12 @@ namespace Client.Logic
             }
         }
 
-        private async Task<bool> WebSocketConnect(string uri)
+        private async Task<bool> WebSocketConnect(Uri uri)
         {
             for (int i = 0; i < 5; i++)
             {
                 try {
-                    await websocket.ConnectAsync(new Uri(uri), CancellationToken.None);
+                    await websocket.ConnectAsync(uri, CancellationToken.None);
                     return true;
                 }
                 catch (Exception ex) {

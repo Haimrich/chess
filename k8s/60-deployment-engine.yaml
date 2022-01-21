@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-service
+spec:
+  selector:
+    matchLabels:
+      app: engine-service
+  template:
+    metadata:
+      labels:
+        app: engine-service
+    spec:
+      containers:
+        - name: engine-service
+          image: chess_engine:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8090
+          resources:
+            requests:
+              cpu: 500m

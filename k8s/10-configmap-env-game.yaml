@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  MONGODB_URI: mongodb://game-service-db:27017/chess
+  ENGINE_ENDPOINT: http://engine-service:9080
+kind: ConfigMap
+metadata:
+  name: game-env

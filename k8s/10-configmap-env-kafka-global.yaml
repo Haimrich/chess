@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  KAFKA_ADDRESS:  kafka-cluster-kafka-bootstrap:9092
+  KAFKA_OUTBOUND_TOPIC: websocket.outbound
+  KAFKA_INBOUND_TOPIC: websocket.inbound
+  KAFKA_GAME_TOPIC: game
+  KAFKA_CHALLENGE_TOPIC: challenge
+  KAFKA_GAME_GROUP_ID: game
+  KAFKA_CHALLENGE_GROUP_ID: challenge
+  KAFKA_DISPATCHER_GROUP_ID: dispatcher
+kind: ConfigMap
+metadata:
+  name: kafka-global-env

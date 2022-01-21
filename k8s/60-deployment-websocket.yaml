@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websocket-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: websocket-service
+  template:
+    metadata:
+      labels:
+        app: websocket-service
+    spec:
+      containers:
+        - name: websocket-service
+          image: chess_wsnode:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: kafka-global-env
+          env:          
+          - name: KAFKA_WSNODE_INSTANCE_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name

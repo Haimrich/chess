@@ -1,0 +1,47 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: game
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 2
+  replicas: 1
+  config:
+    retention.ms: 75600000
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: websocket.inbound
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 2
+  replicas: 1
+  config:
+    retention.ms: 75600000
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: websocket.outbound
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 75600000
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: challenge
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 18000000

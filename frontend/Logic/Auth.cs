@@ -75,7 +75,7 @@ namespace Client.Logic
                 form.Add(fileContent, "avatar", avatar.Name);
             }
 
-            HttpResponseMessage response = await Application.Instance.http.PostAsync(Application.SERVER_URL + "/signup", form);
+            HttpResponseMessage response = await Application.Instance.http.PostAsync(Application.Instance.SERVER_URL + "/signup", form);
             string sd = response.Content.ReadAsStringAsync().Result;
             System.Diagnostics.Debug.WriteLine(sd);
 
@@ -103,7 +103,7 @@ namespace Client.Logic
 
 
             var response = await Application.Instance.http.PostAsync(
-                Application.SERVER_URL + "/login",
+                Application.Instance.SERVER_URL + "/login",
                 new StringContent(loginForm.ToJsonString(), Encoding.UTF8, "application/json")
             );
 

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  ports:
+  - name: public
+    port: 8080
+  - name: private
+    port: 8070
+  selector:
+    app: user-service
