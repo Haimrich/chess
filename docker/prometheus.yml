@@ -5,3 +5,4 @@ scrape_configs:
   - targets:
     - cadvisor:8080
     - user:2112
+    - wsnode:2112

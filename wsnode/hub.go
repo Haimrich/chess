@@ -8,6 +8,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/gorilla/websocket"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 )
 
 type Message struct {
@@ -31,9 +32,12 @@ type Hub struct {
 	kafkaProducer sarama.AsyncProducer
 	// Consumatore messaggi indirizzati a websocket
 	kafkaConsumer sarama.PartitionConsumer
+
+	// Prometheus
+	prometheus *ginmetrics.Monitor
 }
 
-func NewHub() *Hub {
+func NewHub(prometheus *ginmetrics.Monitor) *Hub {
 
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
@@ -64,6 +68,7 @@ func NewHub() *Hub {
 		outbound:      make(chan Message, 2),
 		kafkaProducer: kafkaProducer,
 		kafkaConsumer: kafkaConsumer,
+		prometheus:    prometheus,
 	}
 }
 
@@ -78,12 +83,15 @@ func (h *Hub) WebsocketListener() {
 				close(old_client.send)
 			}
 			h.clients[client.uid] = client
+			h.prometheus.GetMetric("websocket_connections").SetGaugeValue([]string{"wsnode"}, float64(len(h.clients)))
 
 		case client := <-h.unregister:
 			if c, ok := h.clients[client.uid]; ok && c == client {
 				delete(h.clients, client.uid)
 				close(client.send)
 			}
+			h.prometheus.GetMetric("websocket_connections").SetGaugeValue([]string{"wsnode"}, float64(len(h.clients)))
+
 		case message := <-h.outbound:
 			if h.clients[message.UID] != nil {
 				h.clients[message.UID].send <- message
@@ -128,6 +136,7 @@ func (h *Hub) KafkaMessageConsumer() {
 		ev := <-h.kafkaConsumer.Messages()
 
 		fmt.Printf("[WSNODE] Kafka -> WS: %s\n", string(ev.Value))
+		h.prometheus.GetMetric("websocket_outbound_messages").Inc([]string{"wsnode"})
 
 		var message Message
 		if err := json.Unmarshal(ev.Value, &message); err == nil {

@@ -2,11 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: user-service
+  labels:
+    app: user-service
 spec:
   ports:
   - name: public
     port: 8080
   - name: private
     port: 8070
+  - name: metrics
+    port: 2112
   selector:
     app: user-service

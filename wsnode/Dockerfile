@@ -8,4 +8,5 @@ FROM alpine
 WORKDIR /app
 COPY --from=build-env /go/src/app/wsnode .
 EXPOSE 8081
+EXPOSE 2112
 ENTRYPOINT ["./wsnode"]

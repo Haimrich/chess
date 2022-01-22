@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: websocket-servicemonitor
+  labels:
+    app: websocket-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: websocket-service
+  endpoints:
+  - port: metrics
+    interval: 5s
+    scheme: http

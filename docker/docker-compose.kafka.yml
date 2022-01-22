@@ -31,14 +31,14 @@ services:
   frontend:
     container_name: chess_frontend
     image: chess_frontend
-    build: ./frontend
+    build: ../frontend
     depends_on:
       - wsnode_0
       - user 
     ports:
       - 80:80
     volumes:
-      - ./frontend/nginx.kafka.conf:/etc/nginx/nginx.conf:ro
+      - ../frontend/nginx.kafka.conf:/etc/nginx/nginx.conf:ro
     restart: always
 
   # ===== USER SERVICE ====== #
@@ -46,7 +46,7 @@ services:
   user:
     container_name: chess_user
     image: chess_user
-    build: ./user
+    build: ../user
     depends_on:
       - user_mongodb
       - engine
@@ -67,7 +67,7 @@ services:
     container_name: chess_engine
     image: chess_engine
     build: 
-      context: ./engine
+      context: ../engine
       dockerfile: Dockerfile
 
   # ===== GAME SERVICES ====== #
@@ -75,7 +75,7 @@ services:
   game_1:   
     container_name: chess_game_1
     image: chess_game
-    build: ./game
+    build: ../game
     depends_on:
       - kafka
       - game_mongodb
@@ -89,7 +89,7 @@ services:
   game_0:   
     container_name: chess_game_0
     image: chess_game
-    build: ./game
+    build: ../game
     depends_on:
       - kafka
       - game_mongodb
@@ -113,7 +113,7 @@ services:
   challenge:   
     container_name: chess_challenge
     image: chess_challenge
-    build: ./challenge
+    build: ../challenge
     depends_on:
       - kafka
     environment:
@@ -126,7 +126,7 @@ services:
   dispatcher_1:
     container_name: chess_dispatcher_1
     image: chess_dispatcher
-    build: ./dispatcher
+    build: ../dispatcher
     depends_on:
       - kafka
     environment:
@@ -138,7 +138,7 @@ services:
   dispatcher_0:
     container_name: chess_dispatcher_0
     image: chess_dispatcher
-    build: ./dispatcher
+    build: ../dispatcher
     depends_on:
       - kafka
     environment:
@@ -152,7 +152,7 @@ services:
   wsnode_1:
     container_name: chess_wsnode_1
     image: chess_wsnode
-    build: ./wsnode
+    build: ../wsnode
     ports:
       - 8082:8081
     depends_on:
@@ -165,7 +165,7 @@ services:
   wsnode_0:
     container_name: chess_wsnode_0
     image: chess_wsnode
-    build: ./wsnode
+    build: ../wsnode
     ports:
       - 8081:8081
     depends_on:

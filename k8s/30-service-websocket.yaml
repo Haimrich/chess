@@ -2,8 +2,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: websocket-service
+  labels:
+    app: websocket-service
 spec:
   ports:
-  - port: 8081
+  - name: public 
+    port: 8081
+  - name: metrics
+    port: 2112
   selector:
     app: websocket-service

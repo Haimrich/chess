@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	ginprometheus "github.com/zsais/go-gin-prometheus"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 )
 
 func main() {
@@ -18,12 +18,12 @@ func main() {
 	h := handlers.NewHandler(dbc)
 
 	metrics := gin.New()
-	p := ginprometheus.NewPrometheus("UserService")
-	p.SetMetricsPath(metrics)
+	m := ginmetrics.GetMonitor()
+	m.SetMetricPath("/metrics")
 
 	public := gin.Default()
 	public.Use(cors.Default())
-	public.Use(p.HandlerFunc())
+	m.UseWithoutExposingEndpoint(public)
 
 	public.POST("/signup", h.Signup)
 	public.POST("/login", auth.TokenAuthMiddleware(false), h.Login)
@@ -40,12 +40,14 @@ func main() {
 
 	private := gin.Default()
 	private.Use(cors.Default())
-	private.Use(p.HandlerFunc())
+	m.UseWithoutExposingEndpoint(private)
 
 	private.POST("/status", h.UpdateUserStatus)
 	private.POST("/game", h.UpdateCurrentGame)
 
+	m.Expose(metrics)
 	go func() { log.Fatal(metrics.Run(":2112")) }()
+
 	go func() { log.Fatal(private.Run(":8070")) }()
 	log.Fatal(public.Run(":8080"))
 }

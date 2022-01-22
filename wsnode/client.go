@@ -112,4 +112,5 @@ func (c *Client) SendKafkaMessage(data interface{}) {
 		Value: sarama.ByteEncoder(md),
 	}
 	c.hub.kafkaProducer.Input() <- &kafkaMessage
+	c.hub.prometheus.GetMetric("websocket_inbound_messages").Inc([]string{"wsnode"})
 }

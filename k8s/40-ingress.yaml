@@ -28,9 +28,10 @@ metadata:
       }
 spec:
   rules:
- # - host: chess.dev
+   #- host: chess.example
    - http:
       paths:
+      # WEBSOCKET
       - path: /ws(/|$)(.*)
         pathType: Prefix
         backend:
@@ -38,6 +39,7 @@ spec:
             name: websocket-service
             port:
               number: 8081
+      # USER SERVICE
       - path: /api(/|$)(.*)
         pathType: Prefix
         backend:
@@ -45,6 +47,7 @@ spec:
             name: user-service
             port:
               number: 8080
+      # FRONTEND
       - path: /*(/|$)(.*)
         pathType: Prefix
         backend:
@@ -52,3 +55,25 @@ spec:
             name: frontend-service
             port:
               number: 80
+  # GRAFANA
+   - host: grafana.chess.example
+     http:
+      paths:
+      - path: /*(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
+  # PROMETHEUS
+   - host: prometheus.chess.example
+     http:
+      paths:
+      - path: /*(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-kube-prometheus-prometheus
+            port:
+              number: 9090
