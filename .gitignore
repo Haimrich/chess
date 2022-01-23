@@ -378,3 +378,5 @@ engine/build
 .vscode
 Engine Old
 *.zip
+*-jvsc-*.ipynb
+.ipynb_checkpoints

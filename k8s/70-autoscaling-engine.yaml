@@ -8,8 +8,8 @@ spec:
     kind: Deployment
     name: engine-service
   minReplicas: 1
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 50
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
 status:
   currentReplicas: 1
   desiredReplicas: 0

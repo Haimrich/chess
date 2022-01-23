@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+spec:
+  #replicas: 2
+  selector:
+    matchLabels:
+      app: loadgenerator
+  template:
+    metadata:
+      labels:
+        app: loadgenerator
+    spec:
+      containers:
+        - name: loadgenerator
+          image: chess_loadgenerator
+          imagePullPolicy: Never
+          env:          
+          - name: ENGINE_URL
+            value: http://engine-service:9080

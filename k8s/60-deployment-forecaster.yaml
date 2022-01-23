@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecaster
+spec:
+  #replicas: 2
+  selector:
+    matchLabels:
+      app: forecaster
+  template:
+    metadata:
+      labels:
+        app: forecaster
+    spec:
+      containers:
+        - name: forecaster
+          image: chess_forecaster
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:          
+          - name: PROMETHEUS_URL
+            value: http://prometheus-kube-prometheus-prometheus:9090
+          - name: N_FORECAST
+            value: "100"
