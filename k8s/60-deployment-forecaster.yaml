@@ -23,3 +23,6 @@ spec:
             value: http://prometheus-kube-prometheus-prometheus:9090
           - name: N_FORECAST
             value: "100"
+          envFrom:
+            - configMapRef:
+                name: game-env

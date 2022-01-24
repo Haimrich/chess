@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"user/auth"
 	"user/db"
 	"user/handlers"
@@ -24,6 +25,10 @@ func main() {
 	public := gin.Default()
 	public.Use(cors.Default())
 	m.UseWithoutExposingEndpoint(public)
+
+	public.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
 
 	public.POST("/signup", h.Signup)
 	public.POST("/login", auth.TokenAuthMiddleware(false), h.Login)

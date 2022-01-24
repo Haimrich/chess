@@ -23,5 +23,5 @@ type Game struct {
 	Players         []Player
 	PlayerToMove    int    `bson:"player-to-move" json:"player-to-move"`
 	CurrentPosition string `bson:"current-position" json:"current-position"`
-	Moves           []Move
+	Moves           []Move `bson:"moves,omitempty" json:"moves"`
 }

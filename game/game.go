@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Player struct {
@@ -171,7 +172,8 @@ func (g *Game) updateDatabase(moveNotation string) {
 				{Key: "players.1.remaining-time", Value: g.Players[1].RemainingTime},
 				{Key: "player-to-move", Value: g.playerToMove},
 				{Key: "current-position", Value: fen},
-			}},
+			},
+		},
 		{
 			Key: "$push", Value: bson.M{"moves": move},
 		},
@@ -194,8 +196,10 @@ func (g *Game) queryChessEngine() {
 	queryValues := map[string]interface{}{"fen": fen, "budget": g.Players[g.playerToMove].RemainingTime}
 	queryJson, _ := json.Marshal(queryValues)
 
+	startTime := time.Now()
 	response, _ := http.Post(ENGINE_ENDPOINT, "application/json", bytes.NewBuffer(queryJson))
 	move, _ := ioutil.ReadAll(response.Body)
+	go g.saveEngineTimeInDatabase(fen, time.Since(startTime))
 
 	fmt.Println("Mossa Engine: " + string(move))
 	if g.Players[g.playerToMove].Color == "black" {
@@ -207,4 +211,12 @@ func (g *Game) queryChessEngine() {
 	fmt.Println("Mossa Engine Dopo: " + string(move))
 
 	g.PlayMove <- &chess.MoveMessage{Player: "computer", Move: string(move)}
+}
+
+func (g *Game) saveEngineTimeInDatabase(fen string, elapsedTime time.Duration) {
+	filter := bson.D{{Key: "fen", Value: fen}}
+	update := bson.D{{Key: "$push", Value: bson.M{"measures": elapsedTime}}}
+	opts := options.Update().SetUpsert(true)
+
+	g.h.db.Collection("engine_metrics").UpdateOne(context.TODO(), filter, update, opts)
 }

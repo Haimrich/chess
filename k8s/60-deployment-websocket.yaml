@@ -27,3 +27,17 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          livenessProbe:
+            httpGet:
+              port: 8081
+              path: /ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 5

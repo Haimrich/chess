@@ -1,6 +1,6 @@
 FROM python:3.9
 
-RUN pip3 install requests flask pmdarima pandas
+RUN pip3 install requests flask pmdarima pandas pymongo
 
 WORKDIR /app
 

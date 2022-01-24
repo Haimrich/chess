@@ -63,3 +63,4 @@
 #*.RTF   diff=astextplain
 
 backend/** linguist-vendored
+**.ipynb linguist-vendored

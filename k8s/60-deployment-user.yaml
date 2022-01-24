@@ -25,3 +25,17 @@ spec:
                 name: user-env
             - configMapRef:
                 name: kafka-global-env
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: /ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 5

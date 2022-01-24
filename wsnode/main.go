@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-contrib/cors"
@@ -55,6 +56,10 @@ func main() {
 	m.UseWithoutExposingEndpoint(router)
 
 	router.GET("/", hub.Handler)
+
+	router.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
 
 	m.Expose(metricsRouter)
 	go func() { metricsRouter.Run(":2112") }()

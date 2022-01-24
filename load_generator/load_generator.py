@@ -6,9 +6,11 @@ import os
 
 
 ENGINE_URL = os.getenv("ENGINE_URL", default = "http://chess.example:7772/")
-FEN = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
-MAX_REQS = 8
+MAX_REQS = int(os.getenv("MAX_REQS", default = "6"))
+
 PERIOD = 100
+FEN = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
+
 
 def request(v):
     res = requests.post(ENGINE_URL, json={'fen': FEN, 'budget': 1e7})
