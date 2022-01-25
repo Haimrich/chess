@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chess-grafana-engine-datasource
+  labels:
+    grafana_datasource: "1"
+    release: prometheus
+data:
+  datasource.yaml: |-
+    apiVersion: 1
+    deleteDatasources:
+    - uid: LQLaf4xnk
+      orgId: 1
+    datasources:
+    - name: Engine Datasource
+      uid: LQLaf4xnk
+      url: http://forecaster-service:5000/
+      type: grafana-simple-json-datasource
+      access: proxy
+      enabled: true
+      editable: true
+      isDefault: false

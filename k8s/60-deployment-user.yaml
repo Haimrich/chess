@@ -39,3 +39,11 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 5
+          volumeMounts:
+            - mountPath: /app/avatar
+              name: user-avatars
+      volumes:
+        - name: user-avatars
+          hostPath:
+            path: /chess-user-avatars
+            type: DirectoryOrCreate

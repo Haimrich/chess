@@ -1,28 +1,28 @@
 # Chess
 An online chess platform
 
-Final Course Project UniCT 2022 
-
-Advanced Programming Languages | Distributed Systems and Big Data
+Final Course Project UniCT 2022  
+Advanced Programming Languages  
+Distributed Systems and Big Data
 
 #### Technologies
 
-![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=flat&logo=go&logoColor=white)
-![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=flat&logo=c-sharp&logoColor=white)
-![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=flat&logo=c%2B%2B&logoColor=white)
-![Python](https://img.shields.io/badge/python-3670A0?style=flat&logo=python&logoColor=white)
-![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?styleflat&logo=css3&logoColor=white)
-![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=flat&logo=html5&logoColor=white)
-![.Net](https://img.shields.io/badge/.NET-5C2D91?style=flat&logo=.net&logoColor=white)
-![Blazor](https://img.shields.io/badge/Blazor-512BD4?style=flat&logo=blazor&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=flat&logo=mongodb&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-black?style=flat&logo=JSON%20web%20tokens)
-![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=flat&logo=nginx&logoColor=white)
-![Kafka](https://img.shields.io/badge/kafka-%23231F20.svg?style=flat&logo=apachekafka&logoColor=white)
-![Grafana](https://img.shields.io/badge/grafana-%23F46800.svg?style=flat&logo=grafana&logoColor=white)
-![Prometheus](https://img.shields.io/badge/prometheus-%23E6522C.svg?style=flat&logo=prometheus&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=flat&logo=kubernetes&logoColor=white)
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)
+![Go](https://img.shields.io/badge/Go-white.svg?style=flat&logo=go&logoColor=00ADD8)
+![C#](https://img.shields.io/badge/C%23-white.svg?style=flat&logo=c-sharp&logoColor=239120)
+![C++](https://img.shields.io/badge/C++-white.svg?style=flat&logo=c%2B%2B&logoColor=00599C)
+![Python](https://img.shields.io/badge/Python-white?style=flat&logo=python&logoColor=3670A0)
+![CSS3](https://img.shields.io/badge/CSS3-white.svg?styleflat&logo=css3&logoColor=1572B6)
+![HTML5](https://img.shields.io/badge/HTML5-white.svg?style=flat&logo=html5&logoColor=E34F26)  
+![.Net](https://img.shields.io/badge/.NET-white?style=flat&logo=.net&logoColor=5C2D91)
+![Blazor](https://img.shields.io/badge/Blazor-white?style=flat&logo=blazor&logoColor=512BD4)
+![MongoDB](https://img.shields.io/badge/MongoDB-white.svg?style=flat&logo=mongodb&logoColor=4ea94b)
+![Nginx](https://img.shields.io/badge/Nginx-white.svg?style=flat&logo=nginx&logoColor=009639)
+![Kafka](https://img.shields.io/badge/Kafka-white.svg?style=flat&logo=apachekafka&logoColor=231F20)
+![JWT](https://img.shields.io/badge/JWT-white?style=flat&logo=JSON%20web%20tokens&logoColor=black)  
+![Grafana](https://img.shields.io/badge/Grafana-white.svg?style=flat&logo=grafana&logoColor=F46800)
+![Prometheus](https://img.shields.io/badge/Prometheus-white.svg?style=flat&logo=prometheus&logoColor=E6522C)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-white.svg?style=flat&logo=kubernetes&logoColor=326ce5)
+![Docker](https://img.shields.io/badge/Docker-white.svg?style=flat&logo=docker&logoColor=0db7ed)
 
 ## Description
 - [Backend](https://github.com/Haimrich/chess/tree/main/backend) written in Go using [Gin](https://github.com/gin-gonic/gin) web framework and [Gorilla](https://github.com/gorilla/websocket) websockets. This monolithic component has been splitted in the following microservices:
@@ -38,7 +38,7 @@ Advanced Programming Languages | Distributed Systems and Big Data
 
 ### Docker compose
 
-- Monolitic backend version
+- Monolithic backend version
 
   ```
   docker-compose -f docker/docker-compose.yml up
@@ -72,7 +72,7 @@ docker build -t chess_loadgenerator ./load_generator
 Add Prometheus, requires [Helm](https://helm.sh/)
 ```shell 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm install prometheus prometheus-community/kube-prometheus-stack
+helm install prometheus prometheus-community/kube-prometheus-stack --set "grafana.plugins={grafana-simple-json-datasource,grafana-piechart-panel}"
 ```
 Add [Strimzi](https://strimzi.io/)
 ```shell 
@@ -81,13 +81,17 @@ kubectl apply -f 'https://strimzi.io/install/latest?namespace=default' -n defaul
 Deploy
 ```shell 
 kubectl apply -f k8s
-# To disable the load generator
-# kubectl delete -f k8s/60-deployment-loadgenerator.yaml
+```
+(Optional) Disable the load generator
+```shell 
+kubectl delete -f k8s/60-deployment-loadgenerator.yaml
 ```
 Append entries in /etc/hosts
 ```shell 
 echo "$(minikube ip) chess.example grafana.chess.example prometheus.chess.example" | sudo tee -a /etc/hosts
 ```
+You can try the application at <http://chess.example/>.  
+The Grafana dashboard will be available at <http://grafana.chess.example/d/Iahds4b7k>.
 
 ## Screenshots
 <img src="https://user-images.githubusercontent.com/7826610/150849609-abf87a14-e959-440a-b1b9-d5a8e7fadacb.PNG" height="200"> <img src="https://user-images.githubusercontent.com/7826610/150849995-91c326fc-e26b-4bed-8185-f898219bc3e8.png" height="200">

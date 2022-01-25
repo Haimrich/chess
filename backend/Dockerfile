@@ -3,7 +3,7 @@
 #ADD . /src
 #RUN cd /src && go build -o backend
 
-FROM golang:1.17 AS build-env
+FROM golang:alpine AS build-env
 WORKDIR /go/src/app
 ADD . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o backend
