@@ -15,7 +15,8 @@ namespace Client.Logic
             this.CastlingType = castlingType;
         }
 
-        public override string GenerateNotation(Board board) => (CastlingType & Castling.King) != Castling.None ? "O-O" : "O-O-O";
-
+        public override string GenerateNotation(Board board) => 
+            (CastlingType & Castling.King) != Castling.None ? "O-O" : "O-O-O";
+            
     }
 }

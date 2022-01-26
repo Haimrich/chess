@@ -46,6 +46,11 @@ func NewHub(dbc *mongo.Database) *Hub {
 	}
 }
 
+// Goroutine che gestisce Hub
+// - Registra e cancella client connessi
+// - Registra e cancella partite in corso
+// - Invia messaggi ai client
+
 func (h *Hub) Listen() {
 	for {
 		select {
@@ -74,7 +79,9 @@ func (h *Hub) Listen() {
 			}
 		case game := <-h.removeGame:
 			delete(h.games, game.ID)
-			h.clients[game.Players[0].ID].CurrentGameId = ""
+			if h.clients[game.Players[0].ID] != nil {
+				h.clients[game.Players[0].ID].CurrentGameId = ""
+			}
 			if h.clients[game.Players[1].ID] != nil {
 				h.clients[game.Players[1].ID].CurrentGameId = ""
 			}
@@ -111,6 +118,15 @@ func (h *Hub) Register(uid string, conn *websocket.Conn) {
 	h.SendWelcome(client.uid)
 }
 
+func (h *Hub) Unregister(c *Client) {
+	h.unregister <- c
+	c.conn.Close()
+
+	h.updateUserStatus(c.uid, "offline")
+}
+
+// Aggiorna lo stato dell'utente nel DB
+
 func (h *Hub) updateUserStatus(uid string, status string) (*models.User, error) {
 	id, _ := primitive.ObjectIDFromHex(uid)
 	filter := bson.M{"_id": id}
@@ -137,11 +153,4 @@ func (h *Hub) updateUserStatus(uid string, status string) (*models.User, error) 
 	err := h.db.Collection(db.UsersCollectionName).FindOneAndUpdate(context.TODO(), filter, update).Decode(user)
 
 	return user, err
-}
-
-func (h *Hub) Unregister(c *Client) {
-	h.unregister <- c
-	c.conn.Close()
-
-	h.updateUserStatus(c.uid, "offline")
 }

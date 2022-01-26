@@ -33,12 +33,15 @@ class Tables {
             return instance;
         }
 
+        // Questi restituiscono caselle di destinazione per un pezzo nella casa square
         Bitboard GetPawnPattern(Bitboard square);
         Bitboard GetKingPattern(Bitboard square);
         Bitboard GetKnightPattern(Bitboard square);
 
+        // restituisce valore di un pezzo in una determinata posizione
         int GetPieceValue(Piece piece, Bitboard b);
 
+        // Restituisce valore random per un pezzo in una casa square, serve per zobrisk hashing
         size_t GetPieceRandom(Piece piece, Bitboard square);
         size_t GetEnPassantRandom(Bitboard square);
         size_t GetCastlingRandom(Bitboard square);

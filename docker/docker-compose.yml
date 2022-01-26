@@ -22,6 +22,9 @@ services:
     environment:
       MONGODB_URI: mongodb://mongodb:27017/chess
       ENGINE_ENDPOINT: http://engine:9080
+      JWT_SECRET_KEY: secret
+    volumes:
+      - chess_avatars:/app/avatar
 
   engine:
     container_name: chess_engine
@@ -38,3 +41,4 @@ services:
 
 volumes:
   chess_mongodb:
+  chess_avatars:

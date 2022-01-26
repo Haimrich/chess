@@ -2,6 +2,8 @@ package websocket
 
 import "backend/chess"
 
+// Metodi che gestiscono i messaggi ricevuti dai client
+
 func (h *Hub) HandleChallengeRequest(source *Client, content map[string]interface{}) {
 	if source.CurrentGameId != "" {
 		return

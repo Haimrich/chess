@@ -11,11 +11,25 @@ namespace engine {
 class Bitboard {
     private:
         typedef uint_fast64_t U64;
+
+/*
+più sign -> 0 0 0 0 0 0 0 0 a8
+            0 0 0 0 0 0 0 0
+            0 0 0 0 0 0 0 0
+            0 0 0 0 0 0 0 0
+            0 0 0 0 0 0 0 0
+            0 0 0 0 0 0 0 0
+            0 0 0 0 0 0 0 0 a3
+            0 0 0 0 0 0 0 0 a2
+         h1 0 0 0 0 0 0 0 0 a1 <- meno significativo
+*/
+        
         U64 bitboard;
 
         static const U64 notAFile = 0xfefefefefefefefeULL;
         static const U64 notHFile = 0x7f7f7f7f7f7f7f7fULL;
     public:
+        // Costruttori
         Bitboard() : bitboard(0ULL) {}
         Bitboard(U64 v) : bitboard(v) {}
         Bitboard(std::string square);
@@ -30,6 +44,7 @@ class Bitboard {
             return *this;
         }
 
+        // Metodi vari
         void Set(size_t pos);
         void Clear(Bitboard b);
         bool Has(Bitboard b) const;
@@ -54,27 +69,24 @@ class Bitboard {
         std::vector<Bitboard> Split(Bitboard add);
         std::vector<Bitboard> Split();
 
-        /*
-        00000000
-        00000000
-        00000000
-        00000000
-        00000000
-        00000000
-        00000000 a3
-        00000000 a2
-     h1 00000000 a1
-        */
-
         void Flip();
 
         std::string ToString();
 
+        // Ridefinisco operatore somma, in realtà è un or
         inline Bitboard operator+ (Bitboard const &b) {
             return Bitboard(bitboard | b.bitboard);
         }
         
+        // Per stampare bitboard, utile per debug
+        friend std::ostream& operator<< (std::ostream& os, const Bitboard& b)
+        { 
+            os << std::bitset<64>(b.bitboard);
+            return os;
+        }
+
         // per usare bitboard come chiave nelle mappe
+        
         bool operator== (const Bitboard &other) const
         { 
             return bitboard == other.bitboard;
@@ -83,12 +95,6 @@ class Bitboard {
         bool operator!= (const Bitboard &other) const
         { 
             return !(bitboard == other.bitboard);
-        }
-
-        friend std::ostream& operator<< (std::ostream& os, const Bitboard& b)
-        { 
-            os << std::bitset<64>(b.bitboard);
-            return os;
         }
 
         friend struct BitboardHash;

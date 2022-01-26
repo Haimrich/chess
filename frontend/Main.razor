@@ -26,7 +26,7 @@
 </div>
 
 <div class="sidebar @SideBarCssClass"  @onclick="ToggleNavMenu">
-	
+	Menù finto
 </div>
 
 <div class="panel_window">
@@ -112,7 +112,9 @@
                                     <span class="elo">@user.Elo</span>
                                 </div>
                                 <div class="challenge">
+                                @if (user.UID != app.user.UID) {
                                     <button @onclick=@(() => app.SendChallengeRequest(user.UID)) >Sfida</button>
+                                }
                                 </div>
                             </div>
                         }

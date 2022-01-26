@@ -12,6 +12,7 @@ x-global-kafka: &global-kafka
   KAFKA_CHALLENGE_GROUP_ID: challenge
   KAFKA_DISPATCHER_GROUP_ID: dispatcher
 
+
 # ===== VOLUMES ====== #
 
 volumes:
@@ -21,6 +22,8 @@ volumes:
   chess_kafka_log:
   chess_user_mongodb:
   chess_game_mongodb:
+  chess_avatars:
+
 
 # ===== SERVICES ====== #
 
@@ -41,6 +44,7 @@ services:
       - ../frontend/nginx.kafka.conf:/etc/nginx/nginx.conf:ro
     restart: always
 
+
   # ===== USER SERVICE ====== #
 
   user:
@@ -52,6 +56,8 @@ services:
       - engine
     environment:
       MONGODB_URI: mongodb://user_mongodb:27017/chess
+    volumes:
+      - chess_avatars:/app/avatar
 
   user_mongodb:
     container_name: chess_user_mongodb
@@ -60,7 +66,8 @@ services:
       - chess_user_mongodb:/data/db
     logging:
       driver: none
-    
+
+
   # ===== ENGINE ====== #
 
   engine:
@@ -69,6 +76,7 @@ services:
     build: 
       context: ../engine
       dockerfile: Dockerfile
+
 
   # ===== GAME SERVICES ====== #
 
@@ -108,6 +116,7 @@ services:
     logging:
       driver: none
 
+
   # ===== CHALLENGE SERVICE ====== #
 
   challenge:   
@@ -120,6 +129,7 @@ services:
       <<: *global-kafka
       KAFKA_CHALLENGE_INSTANCE_ID: challenge
     restart: "always"
+
 
   # ===== INBOUND MESSAGE DISPATCHERS ====== #
 
@@ -146,6 +156,7 @@ services:
       KAFKA_DISPATCHER_INSTANCE_ID: dispatcher_0
       USER_SERVICE_ADDRESS: http://user:8070/
     restart: "always"
+
 
   # ===== WEBSOCKET NODES ====== #
 
@@ -180,6 +191,7 @@ services:
         timeout: 10s
         retries: 20
 
+
   # ===== KAFKA ====== #
 
   zookeeper:
@@ -195,7 +207,6 @@ services:
     logging:
       driver: none
 
-  
   kafka:
     image: confluentinc/cp-kafka:latest
     depends_on:
@@ -209,7 +220,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      #KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
       - chess_kafka_data:/var/lib/kafka/data
       - chess_kafka_log:/var/lib/kafka/log
@@ -217,6 +228,25 @@ services:
       driver: none
     restart: always
 
+  kafka-topic-creator:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:9092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic game --replication-factor 1 --partitions 4 --config retention.ms=75600000
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic challenge --replication-factor 1 --partitions 1 --config retention.ms=18000000
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic websocket.inbound --replication-factor 1 --partitions 4 --config retention.ms=75600000
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic websocket.outbound --replication-factor 1 --partitions 4 --config retention.ms=75600000
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka:9092 --list
+      "
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
@@ -229,6 +259,7 @@ services:
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
     logging:
       driver: none
+
 
   # ===== MONITORING ====== #
 

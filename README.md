@@ -5,8 +5,6 @@ Final Course Project UniCT 2022
 Advanced Programming Languages  
 Distributed Systems and Big Data
 
-#### Technologies
-
 ![Go](https://img.shields.io/badge/Go-white.svg?style=flat&logo=go&logoColor=00ADD8)
 ![C#](https://img.shields.io/badge/C%23-white.svg?style=flat&logo=c-sharp&logoColor=239120)
 ![C++](https://img.shields.io/badge/C++-white.svg?style=flat&logo=c%2B%2B&logoColor=00599C)
@@ -38,27 +36,29 @@ Distributed Systems and Big Data
 
 ### Docker compose
 
-- Monolithic backend version
+- Monolithic Backend Version
 
   ```
   docker-compose -f docker/docker-compose.yml up
   ```
-- Microservices and kafka version
+- Microservices w/ Kafka Version
 
   ```
   docker-compose -f docker/docker-compose.kafka.yml up
   ```
+  
+You can try the application at <http://localhost/>.  
 
 ### Minikube
 Start minikube and install addons
 ```shell 
 minikube start
-eval $(minikube -p minikube docker-env)
 minikube addons enable ingress
 minikube addons enable metrics-server
 ```
 Build docker images
 ```shell 
+eval $(minikube -p minikube docker-env)
 docker build -t chess_frontend ./frontend
 docker build -t chess_user ./user
 docker build -t chess_wsnode ./wsnode

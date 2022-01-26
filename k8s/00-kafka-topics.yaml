@@ -5,7 +5,7 @@ metadata:
   labels:
     strimzi.io/cluster: kafka-cluster
 spec:
-  partitions: 2
+  partitions: 4
   replicas: 1
   config:
     retention.ms: 75600000
@@ -17,7 +17,7 @@ metadata:
   labels:
     strimzi.io/cluster: kafka-cluster
 spec:
-  partitions: 2
+  partitions: 4
   replicas: 1
   config:
     retention.ms: 75600000

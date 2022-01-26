@@ -64,7 +64,6 @@ namespace Client.Logic
 
 
             MultipartFormDataContent form = new MultipartFormDataContent();
-
             form.Add(new StringContent(username), "username");
             form.Add(new StringContent(password), "password");
             form.Add(new StringContent(confirm_password), "confirm_password");

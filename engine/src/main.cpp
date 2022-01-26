@@ -17,6 +17,7 @@ void StopHandler(int s){
 
 int main()
 {
+    // per ctrl-c sennò docker-compose ci mette tanto
     struct sigaction sigHandler;
     sigHandler.sa_handler = StopHandler;
     sigemptyset(&sigHandler.sa_mask);
@@ -24,6 +25,7 @@ int main()
     sigaction(SIGINT, &sigHandler, NULL);
     sigaction(SIGTERM, &sigHandler, NULL);
 
+    // Http
 
     std::cout << "🟢 ENGINE START: Server listening..." << std::endl;
 

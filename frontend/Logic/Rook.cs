@@ -9,6 +9,7 @@ namespace Client.Logic
     public class Rook : Piece
     {
         public override string Type { get => (Color == Side.White ? "w" : "b") + "r"; }
+        
         public Rook(Side color, int X, int Y) : base(color, X, Y)
         {
         }

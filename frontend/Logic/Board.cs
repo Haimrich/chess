@@ -5,7 +5,10 @@ namespace Client.Logic
 {
     public class Board
     {
+        // Matrice 8x8 di pezzi (o null)
         private Piece[,] _Board;
+        
+        // Indexers
         public Piece this[int rank, int file]
         {
             get => _Board[rank, file];
@@ -15,23 +18,23 @@ namespace Client.Logic
             get => s is not null ? _Board[s.Rank, s.File] : null;
         }
 
+        // Cose per la partita
+
         Square blackKingPosition;
         Square whiteKingPosition;
-
         Side SideToMove;
 
-        
         public Castling CastlingOpportunities;
+        public Square EnPassantSquare;
 
         int HalfmoveClock;
         int FullmoveClock;
 
+        // Lato del giocatore nella gui
         Side view_side;
-
-        public Square EnPassantSquare;
-
         public string ViewSideClass { get => view_side == Side.White ? "white" : "black"; }
 
+        // Lista dei pezzi sulla _Board
         public List<Piece> Piecies
         {
             get
@@ -44,6 +47,8 @@ namespace Client.Logic
                 return pieces;
             }
         }
+
+        // Costruttori
 
         public Board()
         {
@@ -252,6 +257,8 @@ namespace Client.Logic
             var knight_squares = new[] { (1, 2), (-1, 2), (-2, 1), (-2, -1), (2, 1), (2, -1), (-1, -2), (1, -2) };
             var king_squares = new[] { (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1) };
 
+            // Funzioni locali
+            
             bool checkDirections<T, U>((int, int)[] dirs)
             {
                 for (int i = 0; i < dirs.Length; i++)
@@ -301,12 +308,16 @@ namespace Client.Logic
             return false;
         }
 
+        // Metodo generico per capire se la stessa casella è minacciata da più pezzi dello stesso tipo
+        // Serve per disambiguare la notazione algebrica delle mosse
         public List<P> GetSimiliarPiecesTargetingSameSquare<P>(Side myColor, Square square) where P:Piece {
             var pieces = new List<P>();
 
             var orto_dirs = new[] { (0, 1), (0, -1), (1, 0), (-1, 0) };
             var diag_dirs = new[] { (1, 1), (-1, -1), (1, -1), (-1, 1) };
             var knight_squares = new[] { (1, 2), (-1, 2), (-2, 1), (-2, -1), (2, 1), (2, -1), (-1, -2), (1, -2) };
+
+            // Funzioni locali
 
             void checkDirections((int, int)[] dirs)
             {
@@ -344,6 +355,8 @@ namespace Client.Logic
                     }
                 }
             }
+
+            // Fai cose il base al tipo di pezzo
 
             switch (typeof(P))
             {

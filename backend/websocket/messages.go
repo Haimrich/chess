@@ -13,6 +13,8 @@ type Message struct {
 	Content     map[string]interface{} `json:"content"`
 }
 
+// Legge il tipo di messaggio ricevuto e chiama funzione opportuna
+
 func (h *Hub) ParseIncomingMessage(source *Client, messageBytes []byte) {
 	var message Message
 	if err := json.Unmarshal(messageBytes, &message); err != nil {
@@ -36,6 +38,8 @@ func (h *Hub) ParseIncomingMessage(source *Client, messageBytes []byte) {
 		fmt.Println(logPrefix + "Tipo messaggio non valido: " + string(message.MessageType))
 	}
 }
+
+// Funzioni di invio messaggi websocket ai client
 
 func (h *Hub) SendWelcome(uid string) {
 	content := map[string]interface{}{

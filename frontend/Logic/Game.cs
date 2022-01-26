@@ -31,9 +31,6 @@ namespace Client.Logic
         private Side SideToMove;
         public int PlayerToMove;
 
-        int HalfmoveClock;
-        int FullmoveClock;
-
         private string gameId;
 
         public Game(Side playingSide, User opponent, int time, string gameId) {
@@ -56,8 +53,11 @@ namespace Client.Logic
 
             PlayingSide = playingSide;
             PlayerToMove = playingSide == SideToMove ? 0 : 1;
+
             this.opponent = opponent;
+
             _PlayerSeconds = new int[2] { time, time };
+            
             ticker = new System.Timers.Timer();
             ticker.Interval = 1000;
             ticker.Elapsed += UpdateTimers;
@@ -69,6 +69,7 @@ namespace Client.Logic
             PossibleMoves = new List<Move>();
         }
 
+        // Quando si clicca un pezzo sulla scacchiera
         public void SelectPiece(Piece p)
         {
             if (PromotionMove is not null) return;
@@ -84,6 +85,7 @@ namespace Client.Logic
             }
         }
 
+        // Quando si preme una casella di destinazione
         public async Task PlayMove(Move m)
         {
             if (SideToMove != m.Player) return;
@@ -97,6 +99,7 @@ namespace Client.Logic
             await Application.Instance.SendMove(notation, gameId);
         }
 
+        // Scelta pezzo a cui promuovere pedone
         public async Task ChoosePromotion(string type)
         {
             switch (type) {
@@ -120,6 +123,9 @@ namespace Client.Logic
             PromotionMove = null;
         }
 
+        // Aggiorna le mosse possibili per ciascun pezzo.
+        // Le mosse che si ottengono da ciascun pezzo sono fattibili in teoria ma
+        // sono legali solo quelle che non lasciano il re sotto scacco
         private void UpdatePossibleMoves()
         {
             foreach (var p in Piecies)
@@ -137,6 +143,7 @@ namespace Client.Logic
             }
         }
 
+        // Aggiorna le caselle interessate dall'ultima mosse (per la GUI)
         private void SetLastMoveSquares(Move m)
         {
             LastMoveSquares.Clear();
@@ -144,7 +151,8 @@ namespace Client.Logic
             LastMoveSquares.Add(m.End);
         }
 
-
+        // Handler dell'evento tick del ticker della partita, ogni secondo riduce di uno 
+        // i secondi del player che deve muovere e forza l'aggiornamento della UI
         private void UpdateTimers(Object source, System.Timers.ElapsedEventArgs e) {
             _PlayerSeconds[PlayerToMove] -= 1;
 
@@ -154,7 +162,7 @@ namespace Client.Logic
             Application.Instance.updateUI.Invoke();
         }
 
-
+        // Gioca la mossa ricevuta dal server
         public void PlayReceivedMove(string color, string move, int time) {
             if (!ticker.Enabled) ticker.Start();
             _PlayerSeconds[PlayerToMove] = time;
@@ -179,6 +187,8 @@ namespace Client.Logic
             PlayerToMove = (PlayerToMove + 1) % 2;
         }
 
+        // Funzione che decodifica la mossa ricevuta in notazione algebrica o UCI (quando è del computer)
+        // Qui si è fatto uso di LINQ
         private Move ParseReceivedMove(string color, string move) {
             try
             {

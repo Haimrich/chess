@@ -32,15 +32,20 @@ namespace Client.Logic
             this._moved = p.Moved;
         }
 
-        // TODO deve diventare abstract
-        public virtual List<Move> GetMoves(Board board) { 
-            return new List<Move>();
-        }
-
         public void MoveTo(Square destination) { 
             _moved = true;
             Square.Rank = destination.Rank;
             Square.File = destination.File;
         }
+
+        // Da implementare per ciascun tipo di pezzo
+
+        public abstract List<Move> GetMoves(Board board);
+        /*
+        public virtual List<Move> GetMoves(Board board) { 
+            return new List<Move>();
+        }
+        */
+
     }
 }

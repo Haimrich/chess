@@ -7,6 +7,8 @@
 
 namespace engine {
 
+// Il costruttore crea tutte le lookup tables
+
 Tables::Tables() {
     // Pattern di cattura di pedoni, re e cavalli
     for (int i = 0; i < 64; i++) {

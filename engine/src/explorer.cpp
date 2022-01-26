@@ -100,7 +100,7 @@ int Explorer::Bound(Position pos, int gamma, int depth) {
 
     if (depth <= 0 && bestScore < nullScore) return nullScore;
 
-    // Stalemate check: best move loses king + null move is better
+    // Stalemate 
     if (depth > 0 && bestScore <= -MATE_VALUE && nullScore > -MATE_VALUE) bestScore = 0;
 
     if (!foundPositionInTable || (foundShallower && bestScore >= gamma)) {

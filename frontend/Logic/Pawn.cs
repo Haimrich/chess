@@ -9,6 +9,7 @@ namespace Client.Logic
     public class Pawn : Piece
     {
         public override string Type { get => (Color == Side.White ? "w" : "b") + "p"; }
+        
         public Pawn(Side color, int X, int Y) : base(color, X, Y)
         {
         }

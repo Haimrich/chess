@@ -4,6 +4,8 @@
 
 namespace engine {
 
+// Funzioni utili
+
 std::string trim(std::string& str, char c)
 {
     size_t last = str.find_last_not_of(c)+1;

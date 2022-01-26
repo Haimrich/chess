@@ -22,9 +22,9 @@ type LoginForm struct {
 func (h *Handler) Login(c *gin.Context) {
 	if _, logged := c.Get("uid"); logged {
 		fmt.Println("Sei già loggato zio")
-		c.Redirect(http.StatusMovedPermanently, "/")
-		c.Abort()
-		return
+		//c.Redirect(http.StatusMovedPermanently, "/")
+		//c.Abort()
+		//return
 	}
 
 	var loginData LoginForm

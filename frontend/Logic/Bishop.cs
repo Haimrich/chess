@@ -9,9 +9,11 @@ namespace Client.Logic
     public class Bishop : Piece
     {
         public override string Type { get => (Color == Side.White ? "w" : "b") + "b"; }
+        
         public Bishop(Side color, int X, int Y) : base(color, X, Y)
         {
         }
+
         public override List<Move> GetMoves(Board board)
         {
             var moves = new List<Move>();

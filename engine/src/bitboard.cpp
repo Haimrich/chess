@@ -29,11 +29,13 @@ namespace engine {
     bool Bitboard::IsZero() {
         return bitboard == 0;
     }
-
+    
+    // Restituisce true se c'è un bit settato nella traversa "rank"
     bool Bitboard::IsRank(size_t rank) {
         return Has(Bitboard(0xFFULL << rank*8));
     }
 
+    // Restituiscono Bitboard corrispondenti ad una casa adiacente
     Bitboard Bitboard::North() {
         return Bitboard(bitboard << 8);
     }
@@ -66,20 +68,12 @@ namespace engine {
         return Bitboard((bitboard >> 9) & notHFile);
     }
 
+    // Restituisce il bit meno significativo: 0110 -> 0010
     Bitboard Bitboard::LS1B() {
         return Bitboard(bitboard & -bitboard);
     }
 
-    std::vector<Bitboard> Bitboard::Split(Bitboard add) {
-        std::vector<Bitboard> v;
-        while (!IsZero()) {
-            auto b = LS1B();
-            v.push_back(b + add);
-            Clear(b);
-        }
-        return v;
-    };
-
+    // Splitta una bitboard tipo così: 0110 -> {0100, 0010}
     std::vector<Bitboard> Bitboard::Split() {
         std::vector<Bitboard> v;
         while (!IsZero()) {
@@ -90,6 +84,20 @@ namespace engine {
         return v;
     };
 
+    // Splitta una bitboard e fa l'OR con un'altra contemporaneamente: 0110.Add(1000) -> {1100,1010}
+    std::vector<Bitboard> Bitboard::Split(Bitboard add) {
+        std::vector<Bitboard> v;
+        while (!IsZero()) {
+            auto b = LS1B();
+            v.push_back(b + add);
+            Clear(b);
+        }
+        return v;
+    };
+
+
+    // Ruota una bitboard di 180° e la riflette orizzontalmente
+    // Praticamente è come guardare la scacchiera dal lato opposto
     // https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating
     void Bitboard::Flip() {
         U64& x = bitboard;

@@ -9,6 +9,7 @@ namespace Client.Logic
     public class King : Piece
     {
         public override string Type { get => (Color == Side.White ? "w" : "b") + "k"; }
+        
         public King(Side color, int X, int Y) : base(color, X, Y)
         {
         }

@@ -14,13 +14,17 @@ namespace engine {
 
     class Position {
         private:
+            // 12 bitboard una per ogni colore e per ogni tipo di pezzo
             std::array<std::array<Bitboard, PIECES>, SIDES> bitboards;
 
+            // Casa dove si può catturare enPassant
             Bitboard enPassantSquare;
 
+            // Possibilità di arrocco
             std::array<std::array<bool, CASTLINGS>, SIDES> castlingRights;
 
         public:
+            // Punteggio/valore della posizione
             int score;
 
             Position(std::string fen);
@@ -49,6 +53,9 @@ namespace engine {
         friend std::ostream& operator<< (std::ostream& os, const Position& p);
 
         Position& operator=(const Position& other);
+
+
+        // Per usare oggetti di questa classe come chiave nelle mappe
        
         bool operator== (const Position &other) const
         { 
@@ -75,6 +82,9 @@ namespace engine {
     // per transposition table
     struct PositionHash
     {
+        // Zobrisk hashing praticamente ogni pezzo in una determinata posizione è asssociato
+        // ad un numero random e poi si fa lo xor di tutti i pezzi
+        // insieme ad enpassantsquare e diritti di arrocco.
         std::size_t operator()(Position k) const {
             Tables& tables = Tables::Instance();
 

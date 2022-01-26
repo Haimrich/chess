@@ -16,6 +16,7 @@
 
 namespace engine {
 
+// Costruttore con notazione di Forsyth-Edwards per decodificare posizione ricevuta dal backend
 Position::Position(std::string fen) : enPassantSquare(0), score(0) {
 
     std::unordered_map<char, Piece> charToPiece = {
@@ -87,7 +88,7 @@ Position::Position(std::string fen) : enPassantSquare(0), score(0) {
 	}
 
 	// Campo 5 e 6 - Halfmove e fullmove clock
-	// TODO
+	// TODO ma non credo servano
 
 
     // Flip se non è il turno del bianco
@@ -104,6 +105,7 @@ Position::Position(std::string fen) : enPassantSquare(0), score(0) {
 	}
 }
 
+// Costruttore di copia
 Position::Position(const Position &p) {
     bitboards = p.bitboards;
     enPassantSquare = p.enPassantSquare;
@@ -111,6 +113,7 @@ Position::Position(const Position &p) {
     score = p.score;
 }
 
+// Restituisce vettore di tutte le mosse possibili in questa posizione per il bianco
 std::vector<Move> Position::GetMoves() {
     std::vector<Move> moves;
 
@@ -301,6 +304,7 @@ bool Position::squareInCheck(Bitboard square) {
     return false;
 }
 
+// Scambia la posizione del bianco e del nero e guarda la scacchiera dal lato opposto
 Position Position::Flip() {
     Position np = *this;
     
@@ -318,6 +322,8 @@ Position Position::Flip() {
     return np;
 }
 
+// Restituisce punteggio della posizione dopo aver fatto la mossa m
+// Non modifica la posizione attuale
 int Position::Evaluate(Move m) {
     Bitboard startPiece = bitboards[WHITE][m.piece].Intersect(m.bitboard);
     Bitboard endPiece = startPiece.Invert(m.bitboard);
@@ -360,6 +366,7 @@ int Position::Evaluate(Move m) {
     return newScore;
 }
 
+// Restituisce la posizione ottenuta giocando la mossa m e flippando tutto
 Position Position::MakeMove(Move m) {
     Bitboard startPiece = bitboards[WHITE][m.piece].Intersect(m.bitboard);
     Bitboard endPiece = startPiece.Invert(m.bitboard);
@@ -417,7 +424,7 @@ Position Position::MakeMove(Move m) {
 	return np.Flip();
 }
 
-
+// Restituisce notazione UCI di una mossa tipo e2e4 cioè (casa partenza)(casa destinazione)
 std::string Position::MoveToString(Move m) {
     Bitboard startPiece = bitboards[WHITE][m.piece].Intersect(m.bitboard);
     Bitboard endPiece = startPiece.Invert(m.bitboard);
@@ -428,6 +435,7 @@ std::string Position::MoveToString(Move m) {
     return startPiece.ToString() + endPiece.ToString();
 }
 
+// Operatore assegnazione
 Position& Position::operator=(const Position& p) { 
     bitboards = p.bitboards;
     enPassantSquare = p.enPassantSquare;
@@ -437,6 +445,7 @@ Position& Position::operator=(const Position& p) {
     return *this;
 }
 
+// Per debug
 std::ostream& operator<< (std::ostream& os, const Position& p) {
     os << "POSITION - Hash: " << PositionHash()(p) << std::endl;
     std::string pieceToSymbol[] = {" ♚", " ♛", " ♜", " ♝", " ♞", " ♟︎", " ♔", " ♕", " ♖", " ♗", " ♘", " ♙"};

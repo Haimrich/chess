@@ -84,6 +84,7 @@ func NewGame(h *Hub, uidPlayerA string, uidPlayerB string) {
 }
 
 // Goroutine che gestisce timer ecc.
+
 func (g *Game) Game() {
 
 	for {
@@ -117,6 +118,7 @@ func (g *Game) Game() {
 	}
 }
 
+// Stoppa timer del giocatore che ha giocato la mossa e fai partire quello dell'avversario
 func (g *Game) updateTimers() {
 	otherPlayer := (g.playerToMove + 1) % 2
 
@@ -139,6 +141,8 @@ func (g *Game) sendMessages(move string) {
 func (g *Game) updatePlayerToMove() {
 	g.playerToMove = (g.playerToMove + 1) % 2
 }
+
+// Controlla se la partita è finita per scacco matto e per stallo
 
 func (g *Game) checkEndGame() bool {
 	g.board.UpdatePossibleMoves()
